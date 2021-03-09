@@ -1,0 +1,7 @@
+[package]
+name = "netrangemerge"
+version = "0.1.0"
+authors = ["Palmer Cox <p@lmercox.com>"]
+edition = "2018"
+
+[dependencies]

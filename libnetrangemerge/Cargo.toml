@@ -1,0 +1,12 @@
+[package]
+name = "libnetrangemerge"
+version = "0.1.0"
+authors = ["Palmer Cox <p@lmercox.com>"]
+edition = "2018"
+
+[dependencies]
+cidr = "0.1.1"
+
+[features]
+default = ["alloc"]
+alloc = []
