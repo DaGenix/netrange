@@ -6,6 +6,8 @@ pub use network::{
     NetworkParseError, UnparseableNetworkError,
 };
 
+pub use merge::merge_networks;
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum NetworkInterestState {
     Interesting,
