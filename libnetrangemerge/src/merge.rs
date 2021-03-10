@@ -1,4 +1,4 @@
-use crate::{NetworkInterest, NetworkInterestState};
+use crate::{NetworkInterest};
 use cidr::Cidr;
 use std::cmp::Ordering;
 
