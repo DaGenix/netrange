@@ -28,7 +28,7 @@ fn compact(networks: &mut [NetworkInterest]) -> usize {
         {
             networks[open_idx] = networks[start_search + next_item_idx];
             open_idx += 1;
-            start_search = start_search + next_item_idx + 1;
+            start_search += next_item_idx + 1;
         }
 
         open_idx
@@ -39,17 +39,16 @@ fn compact(networks: &mut [NetworkInterest]) -> usize {
 
 fn remove_overlapping_networks(networks: &mut [NetworkInterest]) -> usize {
     fn remove_overlapping_networks_in_place(mut networks: &mut [NetworkInterest]) {
-        networks.sort_unstable_by(|a, b| a.network().cmp(&b.network).reverse());
+        networks.sort_unstable_by(|a, b| a.network().cmp(&b.network));
 
         while networks.len() >= 2 {
             if let Some(n) =
-                try_merge_overlapping(&networks[networks.len() - 1], &networks[networks.len() - 2])
+                try_merge_overlapping(&networks[0], &networks[1])
             {
-                networks[networks.len() - 1].set_dummy();
-                networks[networks.len() - 2] = n;
+                networks[0].set_dummy();
+                networks[1] = n;
             }
-            let l = networks.len();
-            networks = &mut networks[..l - 1];
+            networks = &mut networks[1..];
         }
     }
 
