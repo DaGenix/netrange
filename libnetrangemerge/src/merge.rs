@@ -1,5 +1,4 @@
-use crate::network::DUMMY_NETWORK;
-use crate::{NetworkInterest, DUMMY_NETWORK_INTEREST};
+use crate::NetworkInterest;
 use cidr::Cidr;
 
 fn try_merge_overlapping(
@@ -23,11 +22,9 @@ fn try_merge_overlapping(
 }
 
 fn compact(networks: &mut [NetworkInterest]) -> usize {
-    if let Some(mut open_idx) = networks.iter().position(|x| x.network() == DUMMY_NETWORK) {
+    if let Some(mut open_idx) = networks.iter().position(|x| x.is_dummy()) {
         let mut start_search = open_idx + 1;
-        while let Some(next_item_idx) = networks[start_search..]
-            .iter()
-            .position(|x| x.network() != DUMMY_NETWORK)
+        while let Some(next_item_idx) = networks[start_search..].iter().position(|x| !x.is_dummy())
         {
             networks[open_idx] = networks[start_search + next_item_idx];
             open_idx += 1;
@@ -48,7 +45,7 @@ fn remove_overlapping_networks(networks: &mut [NetworkInterest]) -> usize {
             if let Some(n) =
                 try_merge_overlapping(&networks[networks.len() - 1], &networks[networks.len() - 2])
             {
-                networks[networks.len() - 1] = DUMMY_NETWORK_INTEREST;
+                networks[networks.len() - 1].set_dummy();
                 networks[networks.len() - 2] = n;
             }
             let l = networks.len();

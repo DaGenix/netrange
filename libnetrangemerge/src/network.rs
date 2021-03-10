@@ -4,13 +4,6 @@ use std::fmt::{self, Debug, Display, Formatter};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
-pub(crate) const DUMMY_NETWORK: Network = Network {
-    host_address: IpAddr::V6(Ipv6Addr::new(
-        0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-    )),
-    network_length: 255,
-};
-
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Network {
     host_address: IpAddr,
