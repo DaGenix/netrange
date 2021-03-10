@@ -4,7 +4,7 @@ use std::fmt::{self, Debug, Display, Formatter};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Network {
     host_address: IpAddr,
     network_length: u8,
@@ -187,11 +187,11 @@ impl Network {
     }
 
     pub fn host_address(&self) -> IpAddr {
-        self.host_address()
+        self.host_address
     }
 
     pub fn network_length(&self) -> u8 {
-        self.network_length()
+        self.network_length
     }
 
     pub(crate) fn cidr(&self) -> cidr::IpCidr {
