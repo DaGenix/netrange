@@ -1,5 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BatchSize};
-use libnetrangemerge::{merge_networks, Network, NetworkInterest, IpNetwork, Ipv4Network};
+use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
+use libnetrangemerge::{merge_networks, IpNetwork, Ipv4Network, NetworkInterest};
 
 fn simple_ip_data() -> Vec<NetworkInterest<IpNetwork>> {
     vec![
@@ -28,28 +28,20 @@ fn simple_ipv4_data() -> Vec<NetworkInterest<Ipv4Network>> {
 }
 
 fn merge_benchmark(c: &mut Criterion) {
-    c.bench_function(
-        "merge_benchmark_generic",
-        |b| {
-            b.iter_batched(
-                || simple_ip_data(),
-                |mut networks| {
-                    merge_networks(&mut networks)
-                },
-                BatchSize::LargeInput,
-            )
-        });
-    c.bench_function(
-        "merge_benchmark_ipv4",
-        |b| {
-            b.iter_batched(
-                || simple_ipv4_data(),
-                |mut networks| {
-                    merge_networks(&mut networks)
-                },
-                BatchSize::LargeInput,
-            )
-        });
+    c.bench_function("merge_benchmark_generic", |b| {
+        b.iter_batched(
+            || simple_ip_data(),
+            |mut networks| merge_networks(&mut networks),
+            BatchSize::LargeInput,
+        )
+    });
+    c.bench_function("merge_benchmark_ipv4", |b| {
+        b.iter_batched(
+            || simple_ipv4_data(),
+            |mut networks| merge_networks(&mut networks),
+            BatchSize::LargeInput,
+        )
+    });
 }
 
 criterion_group!(benches, merge_benchmark);
