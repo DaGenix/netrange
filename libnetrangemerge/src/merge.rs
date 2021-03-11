@@ -172,13 +172,18 @@ fn merge_networks_in_place(networks: &mut [NetworkInterest]) {
     // Step 3: Find where the next chunk begins - and drop everything before that from the remaining networks
     // Step 4: Go to Step 1
 
+    let mut first_iteration = true;
     let mut remaining = networks;
     while !remaining.is_empty() {
         // Step 1:
         let network_length = remaining[0].network().network_length();
         let end_of_chunk_idx = find_end_of_chunk_idx(remaining, network_length);
         let chunk = &mut remaining[..end_of_chunk_idx];
-        chunk.sort_unstable_by(sort_during_merging); // TODO: Not necessary on first iteration
+        if first_iteration {
+            first_iteration = false;
+        } else {
+            chunk.sort_unstable_by(sort_during_merging);
+        }
 
         // Step 2:
         merge_networks_of_equal_length_in_place(chunk);
