@@ -1,4 +1,4 @@
-use crate::{InvalidNetworkError, Network, NetworkInterest};
+use crate::{InvalidNetworkError, Network, IpNetwork, NetworkInterest};
 use cidr::Cidr;
 use std::cmp::Ordering;
 
@@ -80,7 +80,7 @@ fn try_merge_overlapping(
         network2.network().is_ipv6()
     );
 
-    if network1.network().contains(network2.network()) {
+    if network1.network().contains(&network2.network()) {
         Some(NetworkInterest::new(
             network1.network(),
             network1.is_interesting() || network2.is_interesting(),
@@ -123,8 +123,8 @@ fn try_merge_adjacent(
     // Networks 2 & 3 are _not_ adjacent since 127.0.0.2/30 is not a valid network
 
     // Step 1: Try to upgrade network1 into the next biggest sized network
-    let bigger_network = match Network::new(
-        network1.network().host_address(),
+    let bigger_network = match IpNetwork::new(
+        network1.network().host_address().clone(),
         network1.network().network_length() - 1,
     ) {
         Ok(n) => n,
@@ -133,7 +133,7 @@ fn try_merge_adjacent(
     };
 
     // Step 2: Check to see if that new network contains network2
-    if bigger_network.contains(network2.network()) {
+    if bigger_network.contains(&network2.network()) {
         Some(NetworkInterest::new(
             bigger_network,
             network1.is_interesting() || network2.is_interesting(),
@@ -224,7 +224,7 @@ pub fn merge_networks(networks: &mut [NetworkInterest]) -> usize {
 #[cfg(test)]
 mod test {
     use crate::merge::merge_networks;
-    use crate::NetworkInterest;
+    use crate::{NetworkInterest, IpNetwork, Network};
     use std::cmp::Ordering;
 
     // ASSUMES: No Dummies

@@ -129,14 +129,26 @@ impl Display for NetworkParseError {
 
 impl Error for NetworkParseError {}
 
+pub trait Network {
+    type Address;
+
+    fn host_address(&self) -> &Self::Address;
+
+    fn network_length(&self) -> u8;
+
+    fn is_ipv6(&self) -> bool;
+
+    fn contains(&self, other: &Self) -> bool;
+}
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
-pub struct Network {
+pub struct IpNetwork {
     host_address: IpAddr,
     network_length: u8,
 }
 
-impl Network {
-    pub fn new(host_address: IpAddr, network_length: u8) -> Result<Network, InvalidNetworkError> {
+impl IpNetwork {
+    pub fn new(host_address: IpAddr, network_length: u8) -> Result<IpNetwork, InvalidNetworkError> {
         match host_address {
             IpAddr::V4(_) => {
                 if network_length > 32 {
@@ -168,47 +180,49 @@ impl Network {
                 },
             ));
         }
-        Ok(Network {
+        Ok(IpNetwork {
             host_address,
             network_length,
         })
     }
+}
 
-    pub fn host_address(&self) -> IpAddr {
-        self.host_address
+impl Network for IpNetwork {
+    type Address = IpAddr;
+
+    fn host_address(&self) -> &Self::Address {
+        &self.host_address
     }
 
-    pub fn network_length(&self) -> u8 {
+    fn network_length(&self) -> u8 {
         self.network_length
     }
 
-    pub(crate) fn is_ipv6(&self) -> bool {
-        self.cidr().is_ipv6()
+    fn is_ipv6(&self) -> bool {
+        let c = cidr::IpCidr::new(self.host_address, self.network_length).unwrap();
+        c.is_ipv6()
     }
 
-    fn cidr(&self) -> cidr::IpCidr {
-        cidr::Cidr::new(self.host_address, self.network_length).unwrap()
-    }
-
-    pub(crate) fn contains(&self, other: Network) -> bool {
-        self.cidr().contains(&other.host_address)
+    fn contains(&self, other: &Self) -> bool {
+        let c = cidr::IpCidr::new(self.host_address, self.network_length).unwrap();
+        c.contains(&other.host_address)
     }
 }
 
-impl Debug for Network {
+impl Debug for IpNetwork {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}/{}", self.host_address, self.network_length)
     }
 }
 
-impl Display for Network {
+impl Display for IpNetwork {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}/{}", self.host_address, self.network_length)
     }
 }
 
 #[cfg(feature = "alloc")]
-fn parse_error(s: &str) -> Result<Network, NetworkParseError> {
+fn parse_error(s: &str) -> Result<IpNetwork, NetworkParseError> {
     Err(NetworkParseError::UnparseableNetwork(
         UnparseableNetworkError {
             text: s.to_string(),
@@ -217,13 +231,13 @@ fn parse_error(s: &str) -> Result<Network, NetworkParseError> {
 }
 
 #[cfg(not(feature = "alloc"))]
-fn parse_error(s: &str) -> Result<Network, NetworkParseError> {
+fn parse_error(s: &str) -> Result<IpNetwork, NetworkParseError> {
     Err(NetworkParseError::UnparseableNetwork(
         UnparseableNetworkError {},
     ))
 }
 
-impl FromStr for Network {
+impl FromStr for IpNetwork {
     type Err = NetworkParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -248,7 +262,7 @@ impl FromStr for Network {
             return parse_error(s);
         };
 
-        match Network::new(host_address, network_length) {
+        match IpNetwork::new(host_address, network_length) {
             Ok(network) => Ok(network),
             Err(InvalidNetworkError::InvalidNetworkLength(err)) => {
                 Err(NetworkParseError::InvalidNetworkLength(err))
@@ -262,25 +276,25 @@ impl FromStr for Network {
 
 #[cfg(test)]
 mod test {
-    use crate::network::{InvalidNetworkError, Network, NetworkParseError};
+    use crate::network::{InvalidNetworkError, IpNetwork, NetworkParseError};
 
     #[test]
     fn test_new_ipv4() {
-        Network::new("0.0.0.0".parse().unwrap(), 0).unwrap();
-        Network::new("127.0.0.0".parse().unwrap(), 12).unwrap();
-        Network::new("127.0.8.0".parse().unwrap(), 21).unwrap();
+        IpNetwork::new("0.0.0.0".parse().unwrap(), 0).unwrap();
+        IpNetwork::new("127.0.0.0".parse().unwrap(), 12).unwrap();
+        IpNetwork::new("127.0.8.0".parse().unwrap(), 21).unwrap();
 
-        match Network::new("127.0.0.1".parse().unwrap(), 12) {
+        match IpNetwork::new("127.0.0.1".parse().unwrap(), 12) {
             Err(InvalidNetworkError::InvalidHostAddress(_)) => {}
             _ => panic!("Expected InvalidHostAddress failure"),
         }
 
-        match Network::new("127.0.0.0".parse().unwrap(), 99) {
+        match IpNetwork::new("127.0.0.0".parse().unwrap(), 99) {
             Err(InvalidNetworkError::InvalidNetworkLength(_)) => {}
             _ => panic!("Expected InvalidNetworkLength failure"),
         }
 
-        match Network::new("127.0.0.0".parse().unwrap(), 0) {
+        match IpNetwork::new("127.0.0.0".parse().unwrap(), 0) {
             Err(InvalidNetworkError::InvalidHostAddress(_)) => {}
             _ => panic!("Expected InvalidHostAddress failure"),
         }
@@ -288,41 +302,41 @@ mod test {
 
     #[test]
     fn test_parsing_ipv4() {
-        "0.0.0.0/0".parse::<Network>().unwrap();
-        "127.0.0.0/12".parse::<Network>().unwrap();
-        "127.0.8.0/21".parse::<Network>().unwrap();
+        "0.0.0.0/0".parse::<IpNetwork>().unwrap();
+        "127.0.0.0/12".parse::<IpNetwork>().unwrap();
+        "127.0.8.0/21".parse::<IpNetwork>().unwrap();
 
-        match "127.0.0.1/12".parse::<Network>() {
+        match "127.0.0.1/12".parse::<IpNetwork>() {
             Err(NetworkParseError::InvalidHostAddress(_)) => {}
             _ => panic!("Expected InvalidHostAddress failure"),
         }
 
-        match "127.0.0.0/99".parse::<Network>() {
+        match "127.0.0.0/99".parse::<IpNetwork>() {
             Err(NetworkParseError::InvalidNetworkLength(_)) => {}
             _ => panic!("Expected InvalidNetworkLength failure"),
         }
 
-        match "127.0.0.0/0".parse::<Network>() {
+        match "127.0.0.0/0".parse::<IpNetwork>() {
             Err(NetworkParseError::InvalidHostAddress(_)) => {}
             _ => panic!("Expected InvalidHostAddress failure"),
         }
 
-        match "127.0.0.0x12".parse::<Network>() {
+        match "127.0.0.0x12".parse::<IpNetwork>() {
             Err(NetworkParseError::UnparseableNetwork(_)) => {}
             _ => panic!("Expected UnparseableNetwork failure"),
         }
 
-        match "127.0.0x0/12".parse::<Network>() {
+        match "127.0.0x0/12".parse::<IpNetwork>() {
             Err(NetworkParseError::UnparseableNetwork(_)) => {}
             _ => panic!("Expected UnparseableNetwork failure"),
         }
 
-        match "127.0.0.0/x".parse::<Network>() {
+        match "127.0.0.0/x".parse::<IpNetwork>() {
             Err(NetworkParseError::UnparseableNetwork(_)) => {}
             _ => panic!("Expected UnparseableNetwork failure"),
         }
 
-        match "127.0.0.0/".parse::<Network>() {
+        match "127.0.0.0/".parse::<IpNetwork>() {
             Err(NetworkParseError::UnparseableNetwork(_)) => {}
             _ => panic!("Expected UnparseableNetwork failure"),
         }
@@ -330,21 +344,21 @@ mod test {
 
     #[test]
     fn test_new_ipv6() {
-        Network::new("::".parse().unwrap(), 0).unwrap();
-        Network::new("::".parse().unwrap(), 125).unwrap();
-        Network::new("::8".parse().unwrap(), 125).unwrap();
+        IpNetwork::new("::".parse().unwrap(), 0).unwrap();
+        IpNetwork::new("::".parse().unwrap(), 125).unwrap();
+        IpNetwork::new("::8".parse().unwrap(), 125).unwrap();
 
-        match Network::new("::1".parse().unwrap(), 12) {
+        match IpNetwork::new("::1".parse().unwrap(), 12) {
             Err(InvalidNetworkError::InvalidHostAddress(_)) => {}
             _ => panic!("Expected InvalidHostAddress failure"),
         }
 
-        match Network::new("::".parse().unwrap(), 129) {
+        match IpNetwork::new("::".parse().unwrap(), 129) {
             Err(InvalidNetworkError::InvalidNetworkLength(_)) => {}
             _ => panic!("Expected InvalidNetworkLength failure"),
         }
 
-        match Network::new("::8".parse().unwrap(), 0) {
+        match IpNetwork::new("::8".parse().unwrap(), 0) {
             Err(InvalidNetworkError::InvalidHostAddress(_)) => {}
             _ => panic!("Expected InvalidHostAddress failure"),
         }
@@ -352,41 +366,41 @@ mod test {
 
     #[test]
     fn test_parsing_ipv6() {
-        "::/0".parse::<Network>().unwrap();
-        "::/125".parse::<Network>().unwrap();
-        "::8/125".parse::<Network>().unwrap();
+        "::/0".parse::<IpNetwork>().unwrap();
+        "::/125".parse::<IpNetwork>().unwrap();
+        "::8/125".parse::<IpNetwork>().unwrap();
 
-        match "::1/12".parse::<Network>() {
+        match "::1/12".parse::<IpNetwork>() {
             Err(NetworkParseError::InvalidHostAddress(_)) => {}
             _ => panic!("Expected InvalidHostAddress failure"),
         }
 
-        match "::/129".parse::<Network>() {
+        match "::/129".parse::<IpNetwork>() {
             Err(NetworkParseError::InvalidNetworkLength(_)) => {}
             _ => panic!("Expected InvalidNetworkLength failure"),
         }
 
-        match "::8/1".parse::<Network>() {
+        match "::8/1".parse::<IpNetwork>() {
             Err(NetworkParseError::InvalidHostAddress(_)) => {}
             _ => panic!("Expected InvalidHostAddress failure"),
         }
 
-        match "::8x125".parse::<Network>() {
+        match "::8x125".parse::<IpNetwork>() {
             Err(NetworkParseError::UnparseableNetwork(_)) => {}
             _ => panic!("Expected UnparseableNetwork failure"),
         }
 
-        match "::x/125".parse::<Network>() {
+        match "::x/125".parse::<IpNetwork>() {
             Err(NetworkParseError::UnparseableNetwork(_)) => {}
             _ => panic!("Expected UnparseableNetwork failure"),
         }
 
-        match "::8/x".parse::<Network>() {
+        match "::8/x".parse::<IpNetwork>() {
             Err(NetworkParseError::UnparseableNetwork(_)) => {}
             _ => panic!("Expected UnparseableNetwork failure"),
         }
 
-        match "::8/".parse::<Network>() {
+        match "::8/".parse::<IpNetwork>() {
             Err(NetworkParseError::UnparseableNetwork(_)) => {}
             _ => panic!("Expected UnparseableNetwork failure"),
         }
