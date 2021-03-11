@@ -132,7 +132,7 @@ fn convert_to_ranges(
 }
 
 pub fn aws_command(aws_options: AwsOptions) -> Result<(), Error> {
-    let aws_ranges: AwsRanges = if let Some(file) = aws_options.file {
+    let aws_ranges: AwsRanges = if let Some(_file) = aws_options.file {
         let file = File::open("ip-ranges.json")?;
         serde_json::from_reader(file)?
     } else {

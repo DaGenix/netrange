@@ -2,11 +2,9 @@ mod aws;
 
 use crate::aws::aws_command;
 use anyhow::Error;
-use libnetrangemerge::{merge_networks, IpNetwork, NetworkInterest};
-use serde::Deserialize;
-use std::fs::File;
+
 use std::path::PathBuf;
-use std::str::FromStr;
+
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
