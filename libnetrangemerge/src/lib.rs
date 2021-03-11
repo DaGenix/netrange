@@ -1,9 +1,11 @@
 mod merge;
 mod network;
+mod std_network;
 
-pub use network::{
+pub use network::Network;
+pub use std_network::{
     InvalidHostAddressError, InvalidNetworkError, InvalidNetworkLengthError, IpNetwork,
-    Ipv4Network, Ipv6Network, Network, NetworkParseError, UnparseableNetworkError,
+    Ipv4Network, Ipv6Network, NetworkParseError, UnparseableNetworkError,
 };
 
 pub use merge::merge_networks;

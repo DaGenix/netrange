@@ -125,14 +125,10 @@ fn try_merge_adjacent<N: Clone + Network<Address = A>, A: Clone + Ord>(
     // Networks 2 & 3 are _not_ adjacent since 127.0.0.2/30 is not a valid network
 
     // Step 1: Try to upgrade network1 into the next biggest sized network
-    let bigger_network: Result<N, InvalidNetworkError> = Network::new(
-        network1.network().host_address().clone(),
-        network1.network().network_length() - 1,
-    );
-    let bigger_network = match bigger_network {
-        Ok(n) => n,
-        Err(InvalidNetworkError::InvalidHostAddress(_)) => return None,
-        Err(InvalidNetworkError::InvalidNetworkLength(_)) => unreachable!(),
+    let bigger_network = if let Some(bigger_network) = network1.network().embiggen() {
+        bigger_network
+    } else {
+        return None;
     };
 
     // Step 2: Check to see if that new network contains network2
