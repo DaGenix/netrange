@@ -165,9 +165,7 @@ impl Network for IpNetwork {
     type Address = IpAddr;
 
     fn embiggen(&self) -> Option<Self> {
-        if self.network_length == 0 {
-            return None;
-        }
+        assert_ne!(self.network_length, 0);
         match IpNetwork::new(self.host_address, self.network_length - 1) {
             Ok(n) => Some(n),
             Err(InvalidNetworkError::InvalidHostAddress(_)) => return None,
@@ -287,9 +285,7 @@ impl Network for Ipv4Network {
     type Address = Ipv4Addr;
 
     fn embiggen(&self) -> Option<Self> {
-        if self.network_length == 0 {
-            return None;
-        }
+        assert_ne!(self.network_length, 0);
         match Ipv4Network::new(self.host_address, self.network_length - 1) {
             Ok(n) => Some(n),
             Err(InvalidNetworkError::InvalidHostAddress(_)) => return None,
@@ -400,9 +396,7 @@ impl Network for Ipv6Network {
     type Address = Ipv6Addr;
 
     fn embiggen(&self) -> Option<Self> {
-        if self.network_length == 0 {
-            return None;
-        }
+        assert_ne!(self.network_length, 0);
         match Ipv6Network::new(self.host_address, self.network_length - 1) {
             Ok(n) => Some(n),
             Err(InvalidNetworkError::InvalidHostAddress(_)) => return None,
