@@ -1,9 +1,11 @@
 use crate::Network;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-enum NetworkInterestState {
-    Interesting,
-    NotInteresting,
+enum State<N>
+where
+    N: Network,
+{
+    Normal { network: N, interesting: bool },
     Dummy,
 }
 
@@ -12,44 +14,41 @@ pub struct NetworkInterest<N>
 where
     N: Network,
 {
-    network: N,
-    state: NetworkInterestState,
+    state: State<N>,
 }
 
 impl<N: Network> NetworkInterest<N> {
     pub fn new(network: N, interesting: bool) -> NetworkInterest<N> {
-        let state = if interesting {
-            NetworkInterestState::Interesting
-        } else {
-            NetworkInterestState::NotInteresting
-        };
-        NetworkInterest { network, state }
+        NetworkInterest {
+            state: State::Normal {
+                network,
+                interesting,
+            },
+        }
     }
 
     pub fn network(&self) -> &N {
-        if self.is_dummy() {
-            panic!("NetworkInterest is invalid");
+        match &self.state {
+            State::Normal { network, .. } => network,
+            State::Dummy => panic!("NetworkInterest is invalid"),
         }
-        &self.network
     }
 
     pub fn is_interesting(&self) -> bool {
-        match self.state {
-            NetworkInterestState::Interesting => true,
-            NetworkInterestState::NotInteresting => false,
-            NetworkInterestState::Dummy => panic!("NetworkInterest is invalid"),
+        match &self.state {
+            State::Normal { interesting, .. } => *interesting,
+            State::Dummy => panic!("NetworkInterest is invalid"),
         }
     }
 
     pub(crate) fn set_dummy(&mut self) {
-        self.state = NetworkInterestState::Dummy;
+        self.state = State::Dummy;
     }
 
     pub(crate) fn is_dummy(&self) -> bool {
-        if let NetworkInterestState::Dummy = self.state {
-            true
-        } else {
-            false
+        match &self.state {
+            State::Normal { .. } => false,
+            State::Dummy => true,
         }
     }
 }
