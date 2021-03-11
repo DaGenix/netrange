@@ -47,7 +47,7 @@ const SELECTED_KNOWN_AMAZON_IP_RANGES: &[&'static str] = &[
     "2a05:d000::/25",
 ];
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
 struct AwsRanges {
     #[allow(dead_code)]
@@ -74,7 +74,7 @@ struct AwsIpv6Range {
     network_border_group: String,
 }
 
-fn convert_to_ranges(
+fn convert_to_network_interests(
     aws_ip_ranges: AwsRanges,
     filter_function: &str,
 ) -> Result<Vec<NetworkInterest<IpNetwork>>, Error> {
@@ -132,8 +132,8 @@ fn convert_to_ranges(
 }
 
 pub fn aws_command(aws_options: AwsOptions) -> Result<(), Error> {
-    let aws_ranges: AwsRanges = if let Some(_file) = aws_options.file {
-        let file = File::open("ip-ranges.json")?;
+    let aws_ranges: AwsRanges = if let Some(file) = aws_options.file {
+        let file = File::open(file)?;
         serde_json::from_reader(file)?
     } else {
         let response = reqwest::blocking::get("https://ip-ranges.amazonaws.com/ip-ranges.json")?;
@@ -141,15 +141,17 @@ pub fn aws_command(aws_options: AwsOptions) -> Result<(), Error> {
         serde_json::from_str(&body)?
     };
 
-    let mut all_networks = convert_to_ranges(aws_ranges, &aws_options.filter)?;
+    let mut all_networks = convert_to_network_interests(aws_ranges, &aws_options.filter)?;
 
     // AWS owns some IP ranges that we know about - so, we can add those in
     // as extra knowledge to reduce the number of networks.
-    for known_range in SELECTED_KNOWN_AMAZON_IP_RANGES {
-        all_networks.push(NetworkInterest::new(
-            IpNetwork::from_str(known_range).unwrap(),
-            false,
-        ));
+    if !aws_options.ignore_known_aws_ranges {
+        for known_range in SELECTED_KNOWN_AMAZON_IP_RANGES {
+            all_networks.push(NetworkInterest::new(
+                IpNetwork::from_str(known_range).unwrap(),
+                false,
+            ));
+        }
     }
 
     merge_networks(&mut all_networks);

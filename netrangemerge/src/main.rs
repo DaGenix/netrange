@@ -2,9 +2,7 @@ mod aws;
 
 use crate::aws::aws_command;
 use anyhow::Error;
-
 use std::path::PathBuf;
-
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -22,6 +20,13 @@ pub struct AwsOptions {
         default_value = "return region == 'us-east-1' and service == 'EC2'"
     )]
     pub filter: String,
+
+    /// By default, we include some (currently) known AWS ranges when
+    /// trying to minimize the output. If this option is set, we will
+    /// ignore those ranges. This may produce a larger output set but
+    /// may be useful in case AWS ceases to own those ranges.
+    #[structopt(long)]
+    pub ignore_known_aws_ranges: bool,
 }
 
 #[derive(Debug, StructOpt)]
