@@ -2,7 +2,7 @@ use crate::{InvalidNetworkError, Network, IpNetwork, NetworkInterest};
 use cidr::Cidr;
 use std::cmp::Ordering;
 
-fn dummies_first(a: &NetworkInterest, b: &NetworkInterest) -> Option<Ordering> {
+fn dummies_first<N: Clone + Network<Address=A>, A: Clone + Ord>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Option<Ordering> {
     match (a.is_dummy(), b.is_dummy()) {
         (true, true) => Some(Ordering::Equal),
         (true, false) => Some(Ordering::Less),
@@ -18,12 +18,11 @@ fn dummies_first(a: &NetworkInterest, b: &NetworkInterest) -> Option<Ordering> {
 // IPV4 then IPV6
 // Smaller addresses to bigger addresses
 // Bigger networks to smaller networks
-fn sort_before_merging(a: &NetworkInterest, b: &NetworkInterest) -> Ordering {
+fn sort_before_merging<N: Clone + Network<Address=A>, A: Clone + Ord>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Ordering {
     let ipv4_first = a
         .network()
-        .host_address()
         .is_ipv6()
-        .cmp(&a.network().host_address().is_ipv6());
+        .cmp(&a.network().is_ipv6());
     let smaller_addresses_first = a.network().host_address().cmp(&b.network().host_address());
     let bigger_networks_first = a
         .network()
@@ -40,7 +39,7 @@ fn sort_before_merging(a: &NetworkInterest, b: &NetworkInterest) -> Ordering {
 // Dummies first
 // Smaller networks to bigger networks
 // Smaller addresses to bigger addresses
-fn sort_during_merging(a: &NetworkInterest, b: &NetworkInterest) -> Ordering {
+fn sort_during_merging<N: Clone + Network<Address=A>, A: Clone + Ord>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Ordering {
     if let Some(ord) = dummies_first(a, b) {
         return ord;
     }
@@ -53,12 +52,12 @@ fn sort_during_merging(a: &NetworkInterest, b: &NetworkInterest) -> Ordering {
     smaller_networks_first.then(smaller_addresses_first)
 }
 
-fn compact(networks: &mut [NetworkInterest]) -> usize {
+fn compact<N: Clone + Network<Address=A>, A: Clone + Ord>(networks: &mut [NetworkInterest<N>]) -> usize {
     if let Some(mut open_idx) = networks.iter().position(|x| x.is_dummy()) {
         let mut start_search = open_idx + 1;
         while let Some(next_item_idx) = networks[start_search..].iter().position(|x| !x.is_dummy())
         {
-            networks[open_idx] = networks[start_search + next_item_idx];
+            networks[open_idx] = networks[start_search + next_item_idx].clone();
             networks[start_search + next_item_idx].set_dummy();
             open_idx += 1;
             start_search += next_item_idx + 1;
@@ -70,10 +69,10 @@ fn compact(networks: &mut [NetworkInterest]) -> usize {
     }
 }
 
-fn try_merge_overlapping(
-    network1: &NetworkInterest,
-    network2: &NetworkInterest,
-) -> Option<NetworkInterest> {
+fn try_merge_overlapping<N: Clone + Network<Address=A>, A: Clone + Ord>(
+    network1: &NetworkInterest<N>,
+    network2: &NetworkInterest<N>,
+) -> Option<NetworkInterest<N>> {
     assert!(network1.network().host_address() <= network2.network().host_address());
     assert_eq!(
         network1.network().is_ipv6(),
@@ -82,7 +81,7 @@ fn try_merge_overlapping(
 
     if network1.network().contains(&network2.network()) {
         Some(NetworkInterest::new(
-            network1.network(),
+            network1.network().clone(),
             network1.is_interesting() || network2.is_interesting(),
         ))
     } else {
@@ -92,7 +91,7 @@ fn try_merge_overlapping(
 
 // ASSUMES: networks sorted by address (small to large) and then
 // by network size (big to small)
-fn remove_overlapping_networks_in_place(mut networks: &mut [NetworkInterest]) {
+fn remove_overlapping_networks_in_place<N: Clone + Network<Address=A>, A: Clone + Ord>(mut networks: &mut [NetworkInterest<N>]) {
     while networks.len() >= 2 {
         if let Some(n) = try_merge_overlapping(&networks[0], &networks[1]) {
             networks[0].set_dummy();
@@ -102,10 +101,10 @@ fn remove_overlapping_networks_in_place(mut networks: &mut [NetworkInterest]) {
     }
 }
 
-fn try_merge_adjacent(
-    network1: &NetworkInterest,
-    network2: &NetworkInterest,
-) -> Option<NetworkInterest> {
+fn try_merge_adjacent<N: Clone + Network<Address=A>, A: Clone + Ord>(
+    network1: &NetworkInterest<N>,
+    network2: &NetworkInterest<N>,
+) -> Option<NetworkInterest<N>> {
     assert!(network1.network().host_address() < network2.network().host_address());
     assert_eq!(
         network1.network().is_ipv6(),
@@ -123,10 +122,11 @@ fn try_merge_adjacent(
     // Networks 2 & 3 are _not_ adjacent since 127.0.0.2/30 is not a valid network
 
     // Step 1: Try to upgrade network1 into the next biggest sized network
-    let bigger_network = match IpNetwork::new(
+    let bigger_network: Result<N, InvalidNetworkError> = Network::new(
         network1.network().host_address().clone(),
         network1.network().network_length() - 1,
-    ) {
+    );
+    let bigger_network = match bigger_network {
         Ok(n) => n,
         Err(InvalidNetworkError::InvalidHostAddress(_)) => return None,
         Err(InvalidNetworkError::InvalidNetworkLength(_)) => unreachable!(),
@@ -145,14 +145,14 @@ fn try_merge_adjacent(
 
 // ASSUMES: networks are sorted first by network size (small to large)
 // and then by address (small to large)
-fn merge_networks_in_place(networks: &mut [NetworkInterest]) {
-    fn find_end_of_chunk_idx(nets: &[NetworkInterest], current_length: u8) -> usize {
+fn merge_networks_in_place<N: Clone + Network<Address=A>, A: Clone + Ord>(networks: &mut [NetworkInterest<N>]) {
+    fn find_end_of_chunk_idx<N: Clone + Network<Address=A>, A: Clone + Ord>(nets: &[NetworkInterest<N>], current_length: u8) -> usize {
         nets.iter()
             .position(|n| !n.is_dummy() && n.network().network_length() != current_length)
             .unwrap_or(nets.len())
     }
 
-    fn merge_networks_of_equal_length_in_place(mut nets: &mut [NetworkInterest]) {
+    fn merge_networks_of_equal_length_in_place<N: Clone + Network<Address=A>, A: Clone + Ord>(mut nets: &mut [NetworkInterest<N>]) {
         while nets.len() >= 2 {
             if let Some(n) = try_merge_adjacent(&nets[0], &nets[1]) {
                 nets[0].set_dummy();
@@ -195,7 +195,7 @@ fn merge_networks_in_place(networks: &mut [NetworkInterest]) {
     }
 }
 
-pub fn merge_networks(networks: &mut [NetworkInterest]) -> usize {
+pub fn merge_networks<N: Clone + Network<Address=A>, A: Clone + Ord>(networks: &mut [NetworkInterest<N>]) -> usize {
     networks.sort_unstable_by(sort_before_merging);
 
     let first_ipv6_network = networks
@@ -204,7 +204,7 @@ pub fn merge_networks(networks: &mut [NetworkInterest]) -> usize {
         .unwrap_or(networks.len());
     let (ipv4_networks, ipv6_networks) = networks.split_at_mut(first_ipv6_network);
 
-    fn do_merge(mut networks: &mut [NetworkInterest]) {
+    fn do_merge<N: Clone + Network<Address=A>, A: Clone + Ord>(mut networks: &mut [NetworkInterest<N>]) {
         remove_overlapping_networks_in_place(networks);
 
         let len = compact(networks);
@@ -231,12 +231,11 @@ mod test {
     // IPV4 then IPV6
     // Smaller addresses to bigger addresses
     // Bigger networks to smaller networks
-    fn sort_standard(a: &NetworkInterest, b: &NetworkInterest) -> Ordering {
+    fn sort_standard<N: Network<Address=A>, A: Clone + Ord>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Ordering {
         let ipv4_first = a
             .network()
-            .host_address()
             .is_ipv6()
-            .cmp(&a.network().host_address().is_ipv6());
+            .cmp(&a.network().is_ipv6());
         let smaller_addresses_first = a.network().host_address().cmp(&b.network().host_address());
         let bigger_networks_first = a
             .network()
@@ -249,7 +248,7 @@ mod test {
 
     #[test]
     fn test_remove_overlapping_networks_1() {
-        let mut networks = vec![
+        let mut networks: Vec<NetworkInterest<IpNetwork>> = vec![
             NetworkInterest::new("127.0.0.8/29".parse().unwrap(), false),
             NetworkInterest::new("127.0.0.16/29".parse().unwrap(), true),
             NetworkInterest::new("0.0.0.0/0".parse().unwrap(), false),
@@ -266,7 +265,7 @@ mod test {
 
     #[test]
     fn test_remove_overlapping_networks_2() {
-        let mut networks = vec![
+        let mut networks: Vec<NetworkInterest<IpNetwork>> = vec![
             NetworkInterest::new("127.0.0.0/32".parse().unwrap(), false),
             NetworkInterest::new("127.0.0.1/32".parse().unwrap(), true),
             NetworkInterest::new("127.0.0.0/31".parse().unwrap(), true),
@@ -290,7 +289,7 @@ mod test {
 
     #[test]
     fn test_merge_1() {
-        let mut networks = vec![
+        let mut networks: Vec<NetworkInterest<IpNetwork>> = vec![
             NetworkInterest::new("127.0.0.0/31".parse().unwrap(), false),
             NetworkInterest::new("127.0.0.2/31".parse().unwrap(), true),
             NetworkInterest::new("127.0.0.4/31".parse().unwrap(), true),
@@ -317,7 +316,7 @@ mod test {
 
     #[test]
     fn test_merge_2() {
-        let mut networks = vec![
+        let mut networks: Vec<NetworkInterest<IpNetwork>> = vec![
             NetworkInterest::new("127.0.0.0/31".parse().unwrap(), false),
             NetworkInterest::new("127.0.0.2/31".parse().unwrap(), true),
             NetworkInterest::new("127.0.0.4/31".parse().unwrap(), true),
@@ -335,7 +334,7 @@ mod test {
 
     #[test]
     fn test_merge_3() {
-        let mut networks = vec![
+        let mut networks: Vec<NetworkInterest<IpNetwork>> = vec![
             NetworkInterest::new("127.0.0.0/31".parse().unwrap(), false),
             NetworkInterest::new("127.0.0.2/31".parse().unwrap(), true),
             NetworkInterest::new("127.0.0.0/30".parse().unwrap(), true),

@@ -1,7 +1,7 @@
 use cidr::{Cidr, Inet};
 use std::error::Error;
 use std::fmt::{self, Debug, Display, Formatter};
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
 pub struct InvalidNetworkLengthError {
@@ -70,31 +70,16 @@ impl Display for InvalidNetworkError {
 
 impl Error for InvalidNetworkError {}
 
-#[cfg(feature = "alloc")]
 pub struct UnparseableNetworkError {
     text: String,
 }
 
-#[cfg(feature = "alloc")]
 impl Debug for UnparseableNetworkError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "Either the host or the network length portions of {} could not be parsed",
             self.text
-        )
-    }
-}
-
-#[cfg(not(feature = "alloc"))]
-pub struct UnparseableNetworkError {}
-
-#[cfg(not(feature = "alloc"))]
-impl Debug for UnparseableNetworkError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Either the host or the network length portions of could not be parsed",
         )
     }
 }
@@ -129,8 +114,10 @@ impl Display for NetworkParseError {
 
 impl Error for NetworkParseError {}
 
-pub trait Network {
+pub trait Network: Sized {
     type Address;
+
+    fn new(host_address: Self::Address, network_length: u8) -> Result<Self, InvalidNetworkError>;
 
     fn host_address(&self) -> &Self::Address;
 
@@ -147,8 +134,10 @@ pub struct IpNetwork {
     network_length: u8,
 }
 
-impl IpNetwork {
-    pub fn new(host_address: IpAddr, network_length: u8) -> Result<IpNetwork, InvalidNetworkError> {
+impl Network for IpNetwork {
+    type Address = IpAddr;
+
+    fn new(host_address: IpAddr, network_length: u8) -> Result<IpNetwork, InvalidNetworkError> {
         match host_address {
             IpAddr::V4(_) => {
                 if network_length > 32 {
@@ -185,10 +174,6 @@ impl IpNetwork {
             network_length,
         })
     }
-}
-
-impl Network for IpNetwork {
-    type Address = IpAddr;
 
     fn host_address(&self) -> &Self::Address {
         &self.host_address
@@ -221,19 +206,11 @@ impl Display for IpNetwork {
     }
 }
 
-#[cfg(feature = "alloc")]
-fn parse_error(s: &str) -> Result<IpNetwork, NetworkParseError> {
+fn parse_error<T>(s: &str) -> Result<T, NetworkParseError> {
     Err(NetworkParseError::UnparseableNetwork(
         UnparseableNetworkError {
             text: s.to_string(),
         },
-    ))
-}
-
-#[cfg(not(feature = "alloc"))]
-fn parse_error(s: &str) -> Result<IpNetwork, NetworkParseError> {
-    Err(NetworkParseError::UnparseableNetwork(
-        UnparseableNetworkError {},
     ))
 }
 
@@ -274,9 +251,209 @@ impl FromStr for IpNetwork {
     }
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct Ipv4Network {
+    host_address: Ipv4Addr,
+    network_length: u8,
+}
+
+impl Network for Ipv4Network {
+    type Address = Ipv4Addr;
+
+    fn new(host_address: Ipv4Addr, network_length: u8) -> Result<Ipv4Network, InvalidNetworkError> {
+        if network_length > 32 {
+            return Err(InvalidNetworkError::InvalidNetworkLength(
+                InvalidNetworkLengthError {
+                    network_length,
+                    max_length: 32,
+                },
+            ));
+        }
+        let ipinet = cidr::Ipv4Inet::new(host_address, network_length).unwrap();
+        if ipinet.first_address() != host_address {
+            return Err(InvalidNetworkError::InvalidHostAddress(
+                InvalidHostAddressError {
+                    host_address: host_address.into(),
+                    network_length,
+                },
+            ));
+        }
+        Ok(Ipv4Network {
+            host_address,
+            network_length,
+        })
+    }
+
+    fn host_address(&self) -> &Self::Address {
+        &self.host_address
+    }
+
+    fn network_length(&self) -> u8 {
+        self.network_length
+    }
+
+    fn is_ipv6(&self) -> bool {
+        false
+    }
+
+    fn contains(&self, other: &Self) -> bool {
+        let c = cidr::Ipv4Cidr::new(self.host_address, self.network_length).unwrap();
+        c.contains(&other.host_address)
+    }
+}
+
+impl Debug for Ipv4Network {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/{}", self.host_address, self.network_length)
+    }
+}
+
+impl Display for Ipv4Network {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/{}", self.host_address, self.network_length)
+    }
+}
+
+impl FromStr for Ipv4Network {
+    type Err = NetworkParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let idx_of_slash = if let Some(pos) = s.find("/") {
+            pos
+        } else {
+            return parse_error(s);
+        };
+
+        let host_part = &s[0..idx_of_slash];
+        let network_length_part = &s[idx_of_slash..][1..];
+
+        let host_address = if let Ok(host_address) = host_part.parse() {
+            host_address
+        } else {
+            return parse_error(s);
+        };
+
+        let network_length = if let Ok(network_length) = network_length_part.parse() {
+            network_length
+        } else {
+            return parse_error(s);
+        };
+
+        match Ipv4Network::new(host_address, network_length) {
+            Ok(network) => Ok(network),
+            Err(InvalidNetworkError::InvalidNetworkLength(err)) => {
+                Err(NetworkParseError::InvalidNetworkLength(err))
+            }
+            Err(InvalidNetworkError::InvalidHostAddress(err)) => {
+                Err(NetworkParseError::InvalidHostAddress(err))
+            }
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct Ipv6Network {
+    host_address: Ipv6Addr,
+    network_length: u8,
+}
+
+impl Network for Ipv6Network {
+    type Address = Ipv6Addr;
+
+    fn new(host_address: Ipv6Addr, network_length: u8) -> Result<Ipv6Network, InvalidNetworkError> {
+        if network_length > 128 {
+            return Err(InvalidNetworkError::InvalidNetworkLength(
+                InvalidNetworkLengthError {
+                    network_length,
+                    max_length: 128,
+                },
+            ));
+        }
+        let ipinet = cidr::Ipv6Inet::new(host_address, network_length).unwrap();
+        if ipinet.first_address() != host_address {
+            return Err(InvalidNetworkError::InvalidHostAddress(
+                InvalidHostAddressError {
+                    host_address: host_address.into(),
+                    network_length,
+                },
+            ));
+        }
+        Ok(Ipv6Network {
+            host_address,
+            network_length,
+        })
+    }
+
+    fn host_address(&self) -> &Self::Address {
+        &self.host_address
+    }
+
+    fn network_length(&self) -> u8 {
+        self.network_length
+    }
+
+    fn is_ipv6(&self) -> bool {
+        true
+    }
+
+    fn contains(&self, other: &Self) -> bool {
+        let c = cidr::Ipv6Cidr::new(self.host_address, self.network_length).unwrap();
+        c.contains(&other.host_address)
+    }
+}
+
+impl Debug for Ipv6Network {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/{}", self.host_address, self.network_length)
+    }
+}
+
+impl Display for Ipv6Network {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/{}", self.host_address, self.network_length)
+    }
+}
+
+impl FromStr for Ipv6Network {
+    type Err = NetworkParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let idx_of_slash = if let Some(pos) = s.find("/") {
+            pos
+        } else {
+            return parse_error(s);
+        };
+
+        let host_part = &s[0..idx_of_slash];
+        let network_length_part = &s[idx_of_slash..][1..];
+
+        let host_address = if let Ok(host_address) = host_part.parse() {
+            host_address
+        } else {
+            return parse_error(s);
+        };
+
+        let network_length = if let Ok(network_length) = network_length_part.parse() {
+            network_length
+        } else {
+            return parse_error(s);
+        };
+
+        match Ipv6Network::new(host_address, network_length) {
+            Ok(network) => Ok(network),
+            Err(InvalidNetworkError::InvalidNetworkLength(err)) => {
+                Err(NetworkParseError::InvalidNetworkLength(err))
+            }
+            Err(InvalidNetworkError::InvalidHostAddress(err)) => {
+                Err(NetworkParseError::InvalidHostAddress(err))
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use crate::network::{InvalidNetworkError, IpNetwork, NetworkParseError};
+    use crate::network::{InvalidNetworkError, IpNetwork, Network, NetworkParseError};
 
     #[test]
     fn test_new_ipv4() {

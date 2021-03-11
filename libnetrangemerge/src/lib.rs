@@ -3,7 +3,7 @@ mod network;
 
 pub use network::{
     InvalidHostAddressError, InvalidNetworkError, InvalidNetworkLengthError, Network,
-    NetworkParseError, UnparseableNetworkError, IpNetwork,
+    NetworkParseError, UnparseableNetworkError, IpNetwork, Ipv4Network, Ipv6Network,
 };
 
 pub use merge::merge_networks;
@@ -16,13 +16,16 @@ enum NetworkInterestState {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct NetworkInterest {
-    network: IpNetwork,
+pub struct NetworkInterest<N>
+where
+    N: Network
+{
+    network: N,
     state: NetworkInterestState,
 }
 
-impl NetworkInterest {
-    pub fn new(network: IpNetwork, interesting: bool) -> NetworkInterest {
+impl <N: Network> NetworkInterest<N> {
+    pub fn new(network: N, interesting: bool) -> NetworkInterest<N> {
         let state = if interesting {
             NetworkInterestState::Interesting
         } else {
@@ -31,11 +34,11 @@ impl NetworkInterest {
         NetworkInterest { network, state }
     }
 
-    pub fn network(&self) -> IpNetwork {
+    pub fn network(&self) -> &N {
         if self.is_dummy() {
             panic!("NetworkInterest is invalid");
         }
-        self.network
+        &self.network
     }
 
     pub fn is_interesting(&self) -> bool {
