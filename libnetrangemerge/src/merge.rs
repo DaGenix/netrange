@@ -1,10 +1,7 @@
 use crate::{Network, NetworkInterest};
 use core::cmp::Ordering;
 
-fn dummies_first<N: Clone + Network<Address = A>, A: Clone + Ord>(
-    a: &NetworkInterest<N>,
-    b: &NetworkInterest<N>,
-) -> Option<Ordering> {
+fn dummies_first<N: Network>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Option<Ordering> {
     match (a.is_dummy(), b.is_dummy()) {
         (true, true) => Some(Ordering::Equal),
         (true, false) => Some(Ordering::Less),
@@ -20,10 +17,7 @@ fn dummies_first<N: Clone + Network<Address = A>, A: Clone + Ord>(
 // IPV4 then IPV6
 // Smaller addresses to bigger addresses
 // Bigger networks to smaller networks
-fn sort_before_merging<N: Clone + Network<Address = A>, A: Clone + Ord>(
-    a: &NetworkInterest<N>,
-    b: &NetworkInterest<N>,
-) -> Ordering {
+fn sort_before_merging<N: Network>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Ordering {
     let ipv4_first = a.network().is_ipv6().cmp(&a.network().is_ipv6());
     let smaller_addresses_first = a.network().host_address().cmp(&b.network().host_address());
     let bigger_networks_first = a
@@ -41,10 +35,7 @@ fn sort_before_merging<N: Clone + Network<Address = A>, A: Clone + Ord>(
 // Dummies first
 // Smaller networks to bigger networks
 // Smaller addresses to bigger addresses
-fn sort_during_merging<N: Clone + Network<Address = A>, A: Clone + Ord>(
-    a: &NetworkInterest<N>,
-    b: &NetworkInterest<N>,
-) -> Ordering {
+fn sort_during_merging<N: Network>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Ordering {
     if let Some(ord) = dummies_first(a, b) {
         return ord;
     }
@@ -57,9 +48,7 @@ fn sort_during_merging<N: Clone + Network<Address = A>, A: Clone + Ord>(
     smaller_networks_first.then(smaller_addresses_first)
 }
 
-fn compact<N: Clone + Network<Address = A>, A: Clone + Ord>(
-    networks: &mut [NetworkInterest<N>],
-) -> usize {
+fn compact<N: Network>(networks: &mut [NetworkInterest<N>]) -> usize {
     if let Some(mut open_idx) = networks.iter().position(|x| x.is_dummy()) {
         let mut start_search = open_idx + 1;
         while let Some(next_item_idx) = networks[start_search..].iter().position(|x| !x.is_dummy())
@@ -76,7 +65,7 @@ fn compact<N: Clone + Network<Address = A>, A: Clone + Ord>(
     }
 }
 
-fn try_merge_overlapping<N: Clone + Network<Address = A>, A: Clone + Ord>(
+fn try_merge_overlapping<N: Network>(
     network1: &NetworkInterest<N>,
     network2: &NetworkInterest<N>,
 ) -> Option<NetworkInterest<N>> {
@@ -95,9 +84,7 @@ fn try_merge_overlapping<N: Clone + Network<Address = A>, A: Clone + Ord>(
 
 // ASSUMES: networks sorted by address (small to large) and then
 // by network size (big to small)
-fn remove_overlapping_networks_in_place<N: Clone + Network<Address = A>, A: Clone + Ord>(
-    mut networks: &mut [NetworkInterest<N>],
-) {
+fn remove_overlapping_networks_in_place<N: Network>(mut networks: &mut [NetworkInterest<N>]) {
     while networks.len() >= 2 {
         if let Some(n) = try_merge_overlapping(&networks[0], &networks[1]) {
             networks[0].set_dummy();
@@ -107,7 +94,7 @@ fn remove_overlapping_networks_in_place<N: Clone + Network<Address = A>, A: Clon
     }
 }
 
-fn try_merge_adjacent<N: Clone + Network<Address = A>, A: Clone + Ord>(
+fn try_merge_adjacent<N: Network>(
     network1: &NetworkInterest<N>,
     network2: &NetworkInterest<N>,
 ) -> Option<NetworkInterest<N>> {
@@ -144,21 +131,14 @@ fn try_merge_adjacent<N: Clone + Network<Address = A>, A: Clone + Ord>(
 
 // ASSUMES: networks are sorted first by network size (small to large)
 // and then by address (small to large)
-fn merge_networks_in_place<N: Clone + Network<Address = A>, A: Clone + Ord>(
-    networks: &mut [NetworkInterest<N>],
-) {
-    fn find_end_of_chunk_idx<N: Clone + Network<Address = A>, A: Clone + Ord>(
-        nets: &[NetworkInterest<N>],
-        current_length: u8,
-    ) -> usize {
+fn merge_networks_in_place<N: Network>(networks: &mut [NetworkInterest<N>]) {
+    fn find_end_of_chunk_idx<N: Network>(nets: &[NetworkInterest<N>], current_length: u8) -> usize {
         nets.iter()
             .position(|n| !n.is_dummy() && n.network().network_length() != current_length)
             .unwrap_or(nets.len())
     }
 
-    fn merge_networks_of_equal_length_in_place<N: Clone + Network<Address = A>, A: Clone + Ord>(
-        mut nets: &mut [NetworkInterest<N>],
-    ) {
+    fn merge_networks_of_equal_length_in_place<N: Network>(mut nets: &mut [NetworkInterest<N>]) {
         while nets.len() >= 2 {
             if let Some(n) = try_merge_adjacent(&nets[0], &nets[1]) {
                 nets[0].set_dummy();
@@ -201,9 +181,7 @@ fn merge_networks_in_place<N: Clone + Network<Address = A>, A: Clone + Ord>(
     }
 }
 
-pub fn merge_networks<N: Clone + Network<Address = A>, A: Clone + Ord>(
-    networks: &mut [NetworkInterest<N>],
-) -> usize {
+pub fn merge_networks<N: Network>(networks: &mut [NetworkInterest<N>]) -> usize {
     networks.sort_unstable_by(sort_before_merging);
 
     let first_ipv6_network = networks
@@ -212,9 +190,7 @@ pub fn merge_networks<N: Clone + Network<Address = A>, A: Clone + Ord>(
         .unwrap_or(networks.len());
     let (ipv4_networks, ipv6_networks) = networks.split_at_mut(first_ipv6_network);
 
-    fn do_merge<N: Clone + Network<Address = A>, A: Clone + Ord>(
-        mut networks: &mut [NetworkInterest<N>],
-    ) {
+    fn do_merge<N: Network>(mut networks: &mut [NetworkInterest<N>]) {
         remove_overlapping_networks_in_place(networks);
 
         let len = compact(networks);
@@ -241,10 +217,7 @@ mod test {
     // IPV4 then IPV6
     // Smaller addresses to bigger addresses
     // Bigger networks to smaller networks
-    fn sort_standard<N: Network<Address = A>, A: Clone + Ord>(
-        a: &NetworkInterest<N>,
-        b: &NetworkInterest<N>,
-    ) -> Ordering {
+    fn sort_standard<N: Network>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Ordering {
         let ipv4_first = a.network().is_ipv6().cmp(&a.network().is_ipv6());
         let smaller_addresses_first = a.network().host_address().cmp(&b.network().host_address());
         let bigger_networks_first = a

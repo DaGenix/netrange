@@ -182,8 +182,7 @@ impl Network for IpNetwork {
     }
 
     fn is_ipv6(&self) -> bool {
-        let c = cidr::IpCidr::new(self.host_address, self.network_length).unwrap();
-        c.is_ipv6()
+        self.host_address.is_ipv6()
     }
 
     fn contains(&self, other: &Self) -> bool {

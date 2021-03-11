@@ -1,5 +1,5 @@
-pub trait Network: Sized {
-    type Address;
+pub trait Network: Clone + Sized {
+    type Address: Clone + Ord;
 
     fn embiggen(&self) -> Option<Self>;
 
