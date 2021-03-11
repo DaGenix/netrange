@@ -10,3 +10,5 @@ rlua = "0.17.0"
 serde = { version = "1.0.123", features = ["derive"] }
 serde_json = "1.0.62"
 libnetrangemerge = { path = "../libnetrangemerge" }
+structopt = "0.3.21"
+reqwest = { version = "0.11.2", features = ["blocking"] }
