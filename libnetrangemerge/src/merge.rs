@@ -181,7 +181,7 @@ fn merge_networks_in_place<N: Network>(networks: &mut [NetworkInterest<N>]) {
     }
 }
 
-pub fn merge_networks<N: Network>(networks: &mut [NetworkInterest<N>]) -> usize {
+pub fn merge_networks_slice<N: Network>(networks: &mut [NetworkInterest<N>]) -> usize {
     networks.sort_unstable_by(sort_before_merging);
 
     let first_ipv6_network = networks
@@ -209,7 +209,7 @@ pub fn merge_networks<N: Network>(networks: &mut [NetworkInterest<N>]) -> usize 
 
 #[cfg(test)]
 mod test {
-    use crate::merge::merge_networks;
+    use crate::merge::merge_networks_slice;
     use crate::{IpNetwork, Network, NetworkInterest};
     use std::cmp::Ordering;
 
@@ -236,7 +236,7 @@ mod test {
             NetworkInterest::new("127.0.0.16/29".parse().unwrap(), true),
             NetworkInterest::new("0.0.0.0/0".parse().unwrap(), false),
         ];
-        let len = merge_networks(&mut networks);
+        let len = merge_networks_slice(&mut networks);
         networks.truncate(len);
         networks.sort_unstable_by(sort_standard);
         assert_eq!(networks.len(), 1);
@@ -256,7 +256,7 @@ mod test {
             NetworkInterest::new("127.0.1.1/32".parse().unwrap(), false),
             NetworkInterest::new("127.0.1.0/31".parse().unwrap(), false),
         ];
-        let len = merge_networks(&mut networks);
+        let len = merge_networks_slice(&mut networks);
         networks.truncate(len);
         networks.sort_unstable_by(sort_standard);
         assert_eq!(networks.len(), 2);
@@ -279,7 +279,7 @@ mod test {
             NetworkInterest::new("127.0.0.8/31".parse().unwrap(), true),
             NetworkInterest::new("127.0.0.10/31".parse().unwrap(), true),
         ];
-        let len = merge_networks(&mut networks);
+        let len = merge_networks_slice(&mut networks);
         networks.truncate(len);
         networks.sort_unstable_by(sort_standard);
         assert_eq!(networks.len(), 3);
@@ -305,7 +305,7 @@ mod test {
             NetworkInterest::new("127.0.0.4/31".parse().unwrap(), true),
             NetworkInterest::new("127.0.0.6/31".parse().unwrap(), true),
         ];
-        let len = merge_networks(&mut networks);
+        let len = merge_networks_slice(&mut networks);
         networks.truncate(len);
         networks.sort_unstable_by(sort_standard);
         assert_eq!(networks.len(), 1);
@@ -327,7 +327,7 @@ mod test {
             NetworkInterest::new("127.0.4.0/23".parse().unwrap(), true),
             NetworkInterest::new("127.0.6.0/23".parse().unwrap(), true),
         ];
-        let len = merge_networks(&mut networks);
+        let len = merge_networks_slice(&mut networks);
         networks.truncate(len);
         networks.sort_unstable_by(sort_standard);
         assert_eq!(networks.len(), 3);
