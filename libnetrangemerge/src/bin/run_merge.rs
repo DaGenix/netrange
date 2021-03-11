@@ -1,5 +1,7 @@
-use libnetrangemerge::{merge_networks, NetworkInterest, Ipv4Network};
+#[cfg(feature = "std")]
+use libnetrangemerge::{merge_networks, Ipv4Network, NetworkInterest};
 
+#[cfg(feature = "std")]
 fn simple_ipv4_data() -> Vec<NetworkInterest<Ipv4Network>> {
     vec![
         NetworkInterest::new("127.0.0.0/31".parse().unwrap(), false),
@@ -13,8 +15,12 @@ fn simple_ipv4_data() -> Vec<NetworkInterest<Ipv4Network>> {
     ]
 }
 
+#[cfg(feature = "std")]
 fn main() {
     for _ in 0..1000 {
         merge_networks(&mut simple_ipv4_data());
     }
 }
+
+#[cfg(not(feature = "std"))]
+fn main() {}

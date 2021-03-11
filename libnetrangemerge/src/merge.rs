@@ -1,5 +1,5 @@
-use crate::{InvalidNetworkError, Network, NetworkInterest};
-use std::cmp::Ordering;
+use crate::{Network, NetworkInterest};
+use core::cmp::Ordering;
 
 fn dummies_first<N: Clone + Network<Address = A>, A: Clone + Ord>(
     a: &NetworkInterest<N>,

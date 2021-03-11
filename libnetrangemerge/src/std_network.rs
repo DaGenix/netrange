@@ -1,9 +1,9 @@
+use crate::Network;
 use cidr::{Cidr, Inet};
 use std::error::Error;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
-use crate::Network;
 
 pub struct InvalidNetworkLengthError {
     network_length: u8,
@@ -479,7 +479,6 @@ impl FromStr for Ipv6Network {
 
 #[cfg(test)]
 mod test {
-    use crate::network::Network;
     use crate::std_network::{InvalidNetworkError, IpNetwork, NetworkParseError};
 
     #[test]
