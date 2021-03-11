@@ -4,24 +4,6 @@ use std::fmt::{self, Debug, Display, Formatter};
 use std::net::IpAddr;
 use std::str::FromStr;
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-pub struct Network {
-    host_address: IpAddr,
-    network_length: u8,
-}
-
-impl Debug for Network {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}/{}", self.host_address, self.network_length)
-    }
-}
-
-impl Display for Network {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}/{}", self.host_address, self.network_length)
-    }
-}
-
 pub struct InvalidNetworkLengthError {
     network_length: u8,
     max_length: u8,
@@ -147,6 +129,12 @@ impl Display for NetworkParseError {
 
 impl Error for NetworkParseError {}
 
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct Network {
+    host_address: IpAddr,
+    network_length: u8,
+}
+
 impl Network {
     pub fn new(host_address: IpAddr, network_length: u8) -> Result<Network, InvalidNetworkError> {
         match host_address {
@@ -194,12 +182,28 @@ impl Network {
         self.network_length
     }
 
-    pub(crate) fn cidr(&self) -> cidr::IpCidr {
+    pub(crate) fn is_ipv6(&self) -> bool {
+        self.cidr().is_ipv6()
+    }
+
+    fn cidr(&self) -> cidr::IpCidr {
         cidr::Cidr::new(self.host_address, self.network_length).unwrap()
     }
 
     pub(crate) fn contains(&self, other: Network) -> bool {
         self.cidr().contains(&other.host_address)
+    }
+}
+
+impl Debug for Network {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/{}", self.host_address, self.network_length)
+    }
+}
+
+impl Display for Network {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/{}", self.host_address, self.network_length)
     }
 }
 

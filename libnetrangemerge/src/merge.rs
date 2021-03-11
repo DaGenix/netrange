@@ -76,8 +76,8 @@ fn try_merge_overlapping(
 ) -> Option<NetworkInterest> {
     assert!(network1.network().host_address() <= network2.network().host_address());
     assert_eq!(
-        network1.network().cidr().family(),
-        network2.network().cidr().family()
+        network1.network().is_ipv6(),
+        network2.network().is_ipv6()
     );
 
     if network1.network().contains(network2.network()) {
@@ -108,8 +108,8 @@ fn try_merge_adjacent(
 ) -> Option<NetworkInterest> {
     assert!(network1.network().host_address() < network2.network().host_address());
     assert_eq!(
-        network1.network().cidr().family(),
-        network2.network().cidr().family(),
+        network1.network().is_ipv6(),
+        network2.network().is_ipv6(),
     );
     assert_eq!(
         network1.network().network_length(),
@@ -200,7 +200,7 @@ pub fn merge_networks(networks: &mut [NetworkInterest]) -> usize {
 
     let first_ipv6_network = networks
         .iter()
-        .position(|n| n.network().cidr().is_ipv6())
+        .position(|n| n.network().is_ipv6())
         .unwrap_or(networks.len());
     let (ipv4_networks, ipv6_networks) = networks.split_at_mut(first_ipv6_network);
 
