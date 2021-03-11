@@ -481,7 +481,6 @@ impl FromStr for Ipv6Network {
 mod test {
     use crate::network::Network;
     use crate::std_network::{InvalidNetworkError, IpNetwork, NetworkParseError};
-    use crate::IpNetwork;
 
     #[test]
     fn test_new_ipv4() {
