@@ -3,7 +3,7 @@ use crate::providers::azure::SELECTED_KNOWN_AZURE_IP_RANGES;
 use crate::providers::{aws, azure, gcp};
 use crate::GetRangesOptions;
 use anyhow::{bail, Error};
-use libnetrangemerge::{merge_networks, IpNetwork, Network, NetworkInterest};
+use libnetrangemerge::{merge_ranges, IpRange, Range, RangeInterest};
 use std::collections::HashMap;
 use std::fs::File;
 use std::str::FromStr;
@@ -27,13 +27,13 @@ impl From<i64> for MetadataValue {
 
 pub struct NetworkWithMetadata {
     metadata: HashMap<&'static str, MetadataValue>,
-    networks: Vec<IpNetwork>,
+    networks: Vec<IpRange>,
 }
 
 impl NetworkWithMetadata {
     pub fn new(
         metadata: HashMap<&'static str, MetadataValue>,
-        networks: Vec<IpNetwork>,
+        networks: Vec<IpRange>,
     ) -> NetworkWithMetadata {
         NetworkWithMetadata { metadata, networks }
     }
@@ -87,7 +87,7 @@ pub fn get_ranges_command(options: GetRangesOptions) -> Result<(), Error> {
         None
     };
 
-    let mut all_networks: Vec<NetworkInterest<IpNetwork>> = Vec::new();
+    let mut all_networks: Vec<RangeInterest<IpRange>> = Vec::new();
     for range in ranges {
         let metadata = range.metadata;
         if let Some(lua) = lua.as_ref() {
@@ -112,24 +112,24 @@ pub fn get_ranges_command(options: GetRangesOptions) -> Result<(), Error> {
                 true
             };
 
-            all_networks.push(NetworkInterest::new(network, interesting))
+            all_networks.push(RangeInterest::new(network, interesting))
         }
     }
 
     if !options.ignore_known_ranges {
         for known_range in known_ranges {
-            all_networks.push(NetworkInterest::new(
-                IpNetwork::from_str(known_range).unwrap(),
+            all_networks.push(RangeInterest::new(
+                IpRange::from_str(known_range).unwrap(),
                 false,
             ));
         }
     }
 
-    merge_networks(&mut all_networks);
+    merge_ranges(&mut all_networks);
 
     for network in all_networks {
         if network.is_interesting() {
-            println!("{}", network.network());
+            println!("{}", network.range());
         }
     }
 

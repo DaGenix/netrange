@@ -1,6 +1,6 @@
 use crate::commands::get_ranges::NetworkWithMetadata;
 use anyhow::Error;
-use libnetrangemerge::IpNetwork;
+use libnetrangemerge::IpRange;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::io;
@@ -89,7 +89,7 @@ pub fn load_ranges<R: io::Read>(reader: R) -> Result<Vec<NetworkWithMetadata>, E
         metadata.insert("service", range.service.into());
         metadata.insert("network_border_group", range.network_border_group.into());
 
-        let ranges = vec![IpNetwork::from_str(&range.ip_prefix)?];
+        let ranges = vec![IpRange::from_str(&range.ip_prefix)?];
 
         Ok(NetworkWithMetadata::new(metadata, ranges))
     });
@@ -99,7 +99,7 @@ pub fn load_ranges<R: io::Read>(reader: R) -> Result<Vec<NetworkWithMetadata>, E
         metadata.insert("service", range.service.into());
         metadata.insert("network_border_group", range.network_border_group.into());
 
-        let ranges = vec![IpNetwork::from_str(&range.ipv6_prefix)?];
+        let ranges = vec![IpRange::from_str(&range.ipv6_prefix)?];
 
         Ok(NetworkWithMetadata::new(metadata, ranges))
     });

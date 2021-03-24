@@ -1,6 +1,6 @@
 use crate::commands::get_ranges::NetworkWithMetadata;
 use anyhow::{bail, Error};
-use libnetrangemerge::IpNetwork;
+use libnetrangemerge::IpRange;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::io;
@@ -42,9 +42,9 @@ pub fn load_ranges<R: io::Read>(reader: R) -> Result<Vec<NetworkWithMetadata>, E
             metadata.insert("scope", range.scope.into());
 
             let ranges = if let Some(r) = range.ipv4Prefix {
-                vec![IpNetwork::from_str(&r)?]
+                vec![IpRange::from_str(&r)?]
             } else if let Some(r) = range.ipv6Prefix {
-                vec![IpNetwork::from_str(&r)?]
+                vec![IpRange::from_str(&r)?]
             } else {
                 bail!("No ipv4 or ipv6 prefix found in element.")
             };

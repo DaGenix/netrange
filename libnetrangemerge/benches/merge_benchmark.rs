@@ -1,29 +1,29 @@
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
-use libnetrangemerge::{merge_networks, IpNetwork, Ipv4Network, NetworkInterest};
+use libnetrangemerge::{merge_ranges, IpRange, Ipv4Range, RangeInterest};
 
-fn simple_ip_data() -> Vec<NetworkInterest<IpNetwork>> {
+fn simple_ip_data() -> Vec<RangeInterest<IpRange>> {
     vec![
-        NetworkInterest::new("127.0.0.0/31".parse().unwrap(), false),
-        NetworkInterest::new("127.0.0.2/31".parse().unwrap(), true),
-        NetworkInterest::new("127.0.0.0/30".parse().unwrap(), true),
-        NetworkInterest::new("127.0.0.4/30".parse().unwrap(), true),
-        NetworkInterest::new("127.0.0.8/31".parse().unwrap(), true),
-        NetworkInterest::new("127.0.0.10/31".parse().unwrap(), true),
-        NetworkInterest::new("127.0.4.0/23".parse().unwrap(), true),
-        NetworkInterest::new("127.0.6.0/23".parse().unwrap(), true),
+        RangeInterest::new("127.0.0.0/31".parse().unwrap(), false),
+        RangeInterest::new("127.0.0.2/31".parse().unwrap(), true),
+        RangeInterest::new("127.0.0.0/30".parse().unwrap(), true),
+        RangeInterest::new("127.0.0.4/30".parse().unwrap(), true),
+        RangeInterest::new("127.0.0.8/31".parse().unwrap(), true),
+        RangeInterest::new("127.0.0.10/31".parse().unwrap(), true),
+        RangeInterest::new("127.0.4.0/23".parse().unwrap(), true),
+        RangeInterest::new("127.0.6.0/23".parse().unwrap(), true),
     ]
 }
 
-fn simple_ipv4_data() -> Vec<NetworkInterest<Ipv4Network>> {
+fn simple_ipv4_data() -> Vec<RangeInterest<Ipv4Range>> {
     vec![
-        NetworkInterest::new("127.0.0.0/31".parse().unwrap(), false),
-        NetworkInterest::new("127.0.0.2/31".parse().unwrap(), true),
-        NetworkInterest::new("127.0.0.0/30".parse().unwrap(), true),
-        NetworkInterest::new("127.0.0.4/30".parse().unwrap(), true),
-        NetworkInterest::new("127.0.0.8/31".parse().unwrap(), true),
-        NetworkInterest::new("127.0.0.10/31".parse().unwrap(), true),
-        NetworkInterest::new("127.0.4.0/23".parse().unwrap(), true),
-        NetworkInterest::new("127.0.6.0/23".parse().unwrap(), true),
+        RangeInterest::new("127.0.0.0/31".parse().unwrap(), false),
+        RangeInterest::new("127.0.0.2/31".parse().unwrap(), true),
+        RangeInterest::new("127.0.0.0/30".parse().unwrap(), true),
+        RangeInterest::new("127.0.0.4/30".parse().unwrap(), true),
+        RangeInterest::new("127.0.0.8/31".parse().unwrap(), true),
+        RangeInterest::new("127.0.0.10/31".parse().unwrap(), true),
+        RangeInterest::new("127.0.4.0/23".parse().unwrap(), true),
+        RangeInterest::new("127.0.6.0/23".parse().unwrap(), true),
     ]
 }
 
@@ -31,14 +31,14 @@ fn merge_benchmark(c: &mut Criterion) {
     c.bench_function("merge_benchmark_generic", |b| {
         b.iter_batched(
             || simple_ip_data(),
-            |mut networks| merge_networks(&mut networks),
+            |mut ranges| merge_ranges(&mut ranges),
             BatchSize::LargeInput,
         )
     });
     c.bench_function("merge_benchmark_ipv4", |b| {
         b.iter_batched(
             || simple_ipv4_data(),
-            |mut networks| merge_networks(&mut networks),
+            |mut ranges| merge_ranges(&mut ranges),
             BatchSize::LargeInput,
         )
     });

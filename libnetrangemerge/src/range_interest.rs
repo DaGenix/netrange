@@ -1,43 +1,43 @@
-use crate::Network;
+use crate::Range;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum State<N>
 where
-    N: Network,
+    N: Range,
 {
-    Normal { network: N, interesting: bool },
+    Normal { range: N, interesting: bool },
     Dummy,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct NetworkInterest<N>
+pub struct RangeInterest<N>
 where
-    N: Network,
+    N: Range,
 {
     state: State<N>,
 }
 
-impl<N: Network> NetworkInterest<N> {
-    pub fn new(network: N, interesting: bool) -> NetworkInterest<N> {
-        NetworkInterest {
+impl<N: Range> RangeInterest<N> {
+    pub fn new(range: N, interesting: bool) -> RangeInterest<N> {
+        RangeInterest {
             state: State::Normal {
-                network,
+                range,
                 interesting,
             },
         }
     }
 
-    pub fn network(&self) -> &N {
+    pub fn range(&self) -> &N {
         match &self.state {
-            State::Normal { network, .. } => network,
-            State::Dummy => panic!("NetworkInterest is invalid"),
+            State::Normal { range, .. } => range,
+            State::Dummy => panic!("RangeInterest is invalid"),
         }
     }
 
     pub fn is_interesting(&self) -> bool {
         match &self.state {
             State::Normal { interesting, .. } => *interesting,
-            State::Dummy => panic!("NetworkInterest is invalid"),
+            State::Dummy => panic!("RangeInterest is invalid"),
         }
     }
 

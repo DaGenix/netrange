@@ -1,6 +1,6 @@
 use crate::commands::get_ranges::NetworkWithMetadata;
 use anyhow::{bail, Error};
-use libnetrangemerge::IpNetwork;
+use libnetrangemerge::IpRange;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::io;
@@ -125,10 +125,10 @@ pub fn load_ranges<R: io::Read>(reader: R) -> Result<Vec<NetworkWithMetadata>, E
             let ranges = addressPrefixes
                 .into_iter()
                 .map(|prefix| {
-                    let network = IpNetwork::from_str(&prefix)?;
+                    let network = IpRange::from_str(&prefix)?;
                     Ok(network)
                 })
-                .collect::<Result<Vec<IpNetwork>, Error>>()?;
+                .collect::<Result<Vec<IpRange>, Error>>()?;
 
             Ok(NetworkWithMetadata::new(metadata, ranges))
         })

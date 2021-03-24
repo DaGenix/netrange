@@ -1,7 +1,7 @@
-use crate::{Network, NetworkInterest};
+use crate::{Range, RangeInterest};
 use core::cmp::Ordering;
 
-fn dummies_first<N: Network>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Option<Ordering> {
+fn dummies_first<R: Range>(a: &RangeInterest<R>, b: &RangeInterest<R>) -> Option<Ordering> {
     match (a.is_dummy(), b.is_dummy()) {
         (true, true) => Some(Ordering::Equal),
         (true, false) => Some(Ordering::Less),
@@ -12,133 +12,133 @@ fn dummies_first<N: Network>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> 
 
 // This sort arranges things first by address type and then
 // puts everything in the propper order to find and remove
-// overlapping networks.
-// ASSUMES: No dummy networks
+// overlapping ranges.
+// ASSUMES: No dummy ranges
 // IPV4 then IPV6
 // Smaller addresses to bigger addresses
-// Bigger networks to smaller networks
-fn sort_before_merging<N: Network>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Ordering {
-    let ipv4_first = a.network().is_ipv6().cmp(&a.network().is_ipv6());
-    let smaller_addresses_first = a.network().host_address().cmp(&b.network().host_address());
-    let bigger_networks_first = a
-        .network()
-        .network_length()
-        .cmp(&b.network().network_length());
+// Bigger ranges to smaller ranges
+fn sort_before_merging<R: Range>(a: &RangeInterest<R>, b: &RangeInterest<R>) -> Ordering {
+    let ipv4_first = a.range().is_ipv6().cmp(&a.range().is_ipv6());
+    let smaller_addresses_first = a.range().host_address().cmp(&b.range().host_address());
+    let bigger_ranges_first = a
+        .range()
+        .prefix_length()
+        .cmp(&b.range().prefix_length());
     ipv4_first
         .then(smaller_addresses_first)
-        .then(bigger_networks_first)
+        .then(bigger_ranges_first)
 }
 
-// This sort is run after all of the networks of the same size
-// are merged to prepare for merging networks of the next size.
+// This sort is run after all of the ranges of the same size
+// are merged to prepare for merging ranges of the next size.
 // ASSUMES: Everything has the same family
 // Dummies first
-// Smaller networks to bigger networks
+// Smaller ranges to bigger ranges
 // Smaller addresses to bigger addresses
-fn sort_during_merging<N: Network>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Ordering {
+fn sort_during_merging<R: Range>(a: &RangeInterest<R>, b: &RangeInterest<R>) -> Ordering {
     if let Some(ord) = dummies_first(a, b) {
         return ord;
     }
-    let smaller_networks_first = a
-        .network()
-        .network_length()
-        .cmp(&b.network().network_length())
+    let smaller_ranges_first = a
+        .range()
+        .prefix_length()
+        .cmp(&b.range().prefix_length())
         .reverse();
-    let smaller_addresses_first = a.network().host_address().cmp(&b.network().host_address());
-    smaller_networks_first.then(smaller_addresses_first)
+    let smaller_addresses_first = a.range().host_address().cmp(&b.range().host_address());
+    smaller_ranges_first.then(smaller_addresses_first)
 }
 
-fn compact<N: Network>(networks: &mut [NetworkInterest<N>]) -> usize {
-    if let Some(mut open_idx) = networks.iter().position(|x| x.is_dummy()) {
+fn compact<R: Range>(ranges: &mut [RangeInterest<R>]) -> usize {
+    if let Some(mut open_idx) = ranges.iter().position(|x| x.is_dummy()) {
         let mut start_search = open_idx + 1;
-        while let Some(next_item_idx) = networks[start_search..].iter().position(|x| !x.is_dummy())
+        while let Some(next_item_idx) = ranges[start_search..].iter().position(|x| !x.is_dummy())
         {
-            networks[open_idx] = networks[start_search + next_item_idx].clone();
-            networks[start_search + next_item_idx].set_dummy();
+            ranges[open_idx] = ranges[start_search + next_item_idx].clone();
+            ranges[start_search + next_item_idx].set_dummy();
             open_idx += 1;
             start_search += next_item_idx + 1;
         }
 
         open_idx
     } else {
-        networks.len()
+        ranges.len()
     }
 }
 
-fn try_merge_overlapping<N: Network>(
-    network1: &NetworkInterest<N>,
-    network2: &NetworkInterest<N>,
-) -> Option<NetworkInterest<N>> {
-    assert!(network1.network().host_address() <= network2.network().host_address());
-    assert_eq!(network1.network().is_ipv6(), network2.network().is_ipv6());
+fn try_merge_overlapping<R: Range>(
+    range1: &RangeInterest<R>,
+    range2: &RangeInterest<R>,
+) -> Option<RangeInterest<R>> {
+    assert!(range1.range().host_address() <= range2.range().host_address());
+    assert_eq!(range1.range().is_ipv6(), range2.range().is_ipv6());
 
-    if network1.network().contains(&network2.network()) {
-        Some(NetworkInterest::new(
-            network1.network().clone(),
-            network1.is_interesting() || network2.is_interesting(),
+    if range1.range().contains(&range2.range()) {
+        Some(RangeInterest::new(
+            range1.range().clone(),
+            range1.is_interesting() || range2.is_interesting(),
         ))
     } else {
         None
     }
 }
 
-// ASSUMES: networks sorted by address (small to large) and then
-// by network size (big to small)
-fn remove_overlapping_networks_in_place<N: Network>(mut networks: &mut [NetworkInterest<N>]) {
-    while networks.len() >= 2 {
-        if let Some(n) = try_merge_overlapping(&networks[0], &networks[1]) {
-            networks[0].set_dummy();
-            networks[1] = n;
+// ASSUMES: ranges sorted by address (small to large) and then
+// by range size (big to small)
+fn remove_overlapping_ranges_in_place<R: Range>(mut ranges: &mut [RangeInterest<R>]) {
+    while ranges.len() >= 2 {
+        if let Some(n) = try_merge_overlapping(&ranges[0], &ranges[1]) {
+            ranges[0].set_dummy();
+            ranges[1] = n;
         }
-        networks = &mut networks[1..];
+        ranges = &mut ranges[1..];
     }
 }
 
-fn try_merge_adjacent<N: Network>(
-    network1: &NetworkInterest<N>,
-    network2: &NetworkInterest<N>,
-) -> Option<NetworkInterest<N>> {
-    assert!(network1.network().host_address() < network2.network().host_address());
-    assert_eq!(network1.network().is_ipv6(), network2.network().is_ipv6(),);
+fn try_merge_adjacent<R: Range>(
+    range1: &RangeInterest<R>,
+    range2: &RangeInterest<R>,
+) -> Option<RangeInterest<R>> {
+    assert!(range1.range().host_address() < range2.range().host_address());
+    assert_eq!(range1.range().is_ipv6(), range2.range().is_ipv6(),);
     assert_eq!(
-        network1.network().network_length(),
-        network2.network().network_length(),
+        range1.range().prefix_length(),
+        range2.range().prefix_length(),
     );
 
     // 1) 127.0.0.0/31
     // 2) 127.0.0.2/31
     // 3) 127.0.0.4/31
-    // Networks 1 & 2 are adjacent since 127.0.0.0/30 covers them both
-    // Networks 2 & 3 are _not_ adjacent since 127.0.0.2/30 is not a valid network
+    // Ranges 1 & 2 are adjacent since 127.0.0.0/30 covers them both
+    // Ranges 2 & 3 are _not_ adjacent since 127.0.0.2/30 is not a valid range
 
-    // Step 1: Try to upgrade network1 into the next biggest sized network
-    let bigger_network = if let Some(bigger_network) = network1.network().embiggen() {
-        bigger_network
+    // Step 1: Try to upgrade range1 into the next biggest sized range
+    let bigger_range = if let Some(bigger_range) = range1.range().embiggen() {
+        bigger_range
     } else {
         return None;
     };
 
-    // Step 2: Check to see if that new network contains network2
-    if bigger_network.contains(&network2.network()) {
-        Some(NetworkInterest::new(
-            bigger_network,
-            network1.is_interesting() || network2.is_interesting(),
+    // Step 2: Check to see if that new range contains range2
+    if bigger_range.contains(&range2.range()) {
+        Some(RangeInterest::new(
+            bigger_range,
+            range1.is_interesting() || range2.is_interesting(),
         ))
     } else {
         None
     }
 }
 
-// ASSUMES: networks are sorted first by network size (small to large)
+// ASSUMES: ranges are sorted first by range size (small to large)
 // and then by address (small to large)
-fn merge_networks_in_place<N: Network>(networks: &mut [NetworkInterest<N>]) {
-    fn find_end_of_chunk_idx<N: Network>(nets: &[NetworkInterest<N>], current_length: u8) -> usize {
+fn merge_ranges_in_place<R: Range>(ranges: &mut [RangeInterest<R>]) {
+    fn find_end_of_chunk_idx<R: Range>(nets: &[RangeInterest<R>], current_length: u8) -> usize {
         nets.iter()
-            .position(|n| !n.is_dummy() && n.network().network_length() != current_length)
+            .position(|n| !n.is_dummy() && n.range().prefix_length() != current_length)
             .unwrap_or(nets.len())
     }
 
-    fn merge_networks_of_equal_length_in_place<N: Network>(mut nets: &mut [NetworkInterest<N>]) {
+    fn merge_ranges_of_equal_length_in_place<R: Range>(mut nets: &mut [RangeInterest<R>]) {
         while nets.len() >= 2 {
             if let Some(n) = try_merge_adjacent(&nets[0], &nets[1]) {
                 nets[0].set_dummy();
@@ -151,19 +151,19 @@ fn merge_networks_in_place<N: Network>(networks: &mut [NetworkInterest<N>]) {
     }
 
     // Algorithm:
-    // Step 0: If we have no remaining networks to process, exit
-    // Step 1: Select a chunk of networks that all have the same network lengths from remaining networks
+    // Step 0: If we have no remaining ranges to process, exit
+    // Step 1: Select a chunk of ranges that all have the same range lengths from remaining ranges
     //     1b: After the first iteration - we must re-sort this chunk!
-    // Step 2: Merge & sort networks in that chunk
-    // Step 3: Find where the next chunk begins - and drop everything before that from the remaining networks
+    // Step 2: Merge & sort ranges in that chunk
+    // Step 3: Find where the next chunk begins - and drop everything before that from the remaining ranges
     // Step 4: Go to Step 1
 
     let mut first_iteration = true;
-    let mut remaining = networks;
+    let mut remaining = ranges;
     while !remaining.is_empty() {
         // Step 1:
-        let network_length = remaining[0].network().network_length();
-        let end_of_chunk_idx = find_end_of_chunk_idx(remaining, network_length);
+        let prefix_length = remaining[0].range().prefix_length();
+        let end_of_chunk_idx = find_end_of_chunk_idx(remaining, prefix_length);
         let chunk = &mut remaining[..end_of_chunk_idx];
         if first_iteration {
             first_iteration = false;
@@ -172,176 +172,176 @@ fn merge_networks_in_place<N: Network>(networks: &mut [NetworkInterest<N>]) {
         }
 
         // Step 2:
-        merge_networks_of_equal_length_in_place(chunk);
+        merge_ranges_of_equal_length_in_place(chunk);
         chunk.sort_unstable_by(sort_during_merging);
 
         // Step 3:
-        let start_of_next_chunk_idx = find_end_of_chunk_idx(remaining, network_length);
+        let start_of_next_chunk_idx = find_end_of_chunk_idx(remaining, prefix_length);
         remaining = &mut remaining[start_of_next_chunk_idx..];
     }
 }
 
-pub fn merge_networks_slice<N: Network>(networks: &mut [NetworkInterest<N>]) -> usize {
-    networks.sort_unstable_by(sort_before_merging);
+pub fn merge_ranges_slice<R: Range>(ranges: &mut [RangeInterest<R>]) -> usize {
+    ranges.sort_unstable_by(sort_before_merging);
 
-    let first_ipv6_network = networks
+    let first_ipv6_range = ranges
         .iter()
-        .position(|n| n.network().is_ipv6())
-        .unwrap_or(networks.len());
-    let (ipv4_networks, ipv6_networks) = networks.split_at_mut(first_ipv6_network);
+        .position(|n| n.range().is_ipv6())
+        .unwrap_or(ranges.len());
+    let (ipv4_ranges, ipv6_ranges) = ranges.split_at_mut(first_ipv6_range);
 
-    fn do_merge<N: Network>(mut networks: &mut [NetworkInterest<N>]) {
-        remove_overlapping_networks_in_place(networks);
+    fn do_merge<R: Range>(mut ranges: &mut [RangeInterest<R>]) {
+        remove_overlapping_ranges_in_place(ranges);
 
-        let len = compact(networks);
-        networks = &mut networks[..len];
+        let len = compact(ranges);
+        ranges = &mut ranges[..len];
 
-        networks.sort_unstable_by(sort_during_merging);
+        ranges.sort_unstable_by(sort_during_merging);
 
-        merge_networks_in_place(networks);
+        merge_ranges_in_place(ranges);
     }
 
-    do_merge(ipv4_networks);
-    do_merge(ipv6_networks);
+    do_merge(ipv4_ranges);
+    do_merge(ipv6_ranges);
 
-    compact(networks)
+    compact(ranges)
 }
 
 #[cfg(test)]
 mod test {
-    use crate::merge::merge_networks_slice;
-    use crate::{IpNetwork, Network, NetworkInterest};
+    use crate::merge::merge_ranges_slice;
+    use crate::{IpRange, Range, RangeInterest};
     use std::cmp::Ordering;
 
     // ASSUMES: No Dummies
     // IPV4 then IPV6
     // Smaller addresses to bigger addresses
-    // Bigger networks to smaller networks
-    fn sort_standard<N: Network>(a: &NetworkInterest<N>, b: &NetworkInterest<N>) -> Ordering {
-        let ipv4_first = a.network().is_ipv6().cmp(&a.network().is_ipv6());
-        let smaller_addresses_first = a.network().host_address().cmp(&b.network().host_address());
-        let bigger_networks_first = a
-            .network()
-            .network_length()
-            .cmp(&b.network().network_length());
+    // Bigger ranges to smaller ranges
+    fn sort_standard<R: Range>(a: &RangeInterest<R>, b: &RangeInterest<R>) -> Ordering {
+        let ipv4_first = a.range().is_ipv6().cmp(&a.range().is_ipv6());
+        let smaller_addresses_first = a.range().host_address().cmp(&b.range().host_address());
+        let bigger_ranges_first = a
+            .range()
+            .prefix_length()
+            .cmp(&b.range().prefix_length());
         ipv4_first
             .then(smaller_addresses_first)
-            .then(bigger_networks_first)
+            .then(bigger_ranges_first)
     }
 
     #[test]
-    fn test_remove_overlapping_networks_1() {
-        let mut networks: Vec<NetworkInterest<IpNetwork>> = vec![
-            NetworkInterest::new("127.0.0.8/29".parse().unwrap(), false),
-            NetworkInterest::new("127.0.0.16/29".parse().unwrap(), true),
-            NetworkInterest::new("0.0.0.0/0".parse().unwrap(), false),
+    fn test_remove_overlapping_ranges_1() {
+        let mut ranges: Vec<RangeInterest<IpRange>> = vec![
+            RangeInterest::new("127.0.0.8/29".parse().unwrap(), false),
+            RangeInterest::new("127.0.0.16/29".parse().unwrap(), true),
+            RangeInterest::new("0.0.0.0/0".parse().unwrap(), false),
         ];
-        let len = merge_networks_slice(&mut networks);
-        networks.truncate(len);
-        networks.sort_unstable_by(sort_standard);
-        assert_eq!(networks.len(), 1);
+        let len = merge_ranges_slice(&mut ranges);
+        ranges.truncate(len);
+        ranges.sort_unstable_by(sort_standard);
+        assert_eq!(ranges.len(), 1);
         assert_eq!(
-            networks[0],
-            NetworkInterest::new("0.0.0.0/0".parse().unwrap(), true)
+            ranges[0],
+            RangeInterest::new("0.0.0.0/0".parse().unwrap(), true)
         );
     }
 
     #[test]
-    fn test_remove_overlapping_networks_2() {
-        let mut networks: Vec<NetworkInterest<IpNetwork>> = vec![
-            NetworkInterest::new("127.0.0.0/32".parse().unwrap(), false),
-            NetworkInterest::new("127.0.0.1/32".parse().unwrap(), true),
-            NetworkInterest::new("127.0.0.0/31".parse().unwrap(), true),
-            NetworkInterest::new("127.0.1.0/32".parse().unwrap(), false),
-            NetworkInterest::new("127.0.1.1/32".parse().unwrap(), false),
-            NetworkInterest::new("127.0.1.0/31".parse().unwrap(), false),
+    fn test_remove_overlapping_ranges_2() {
+        let mut ranges: Vec<RangeInterest<IpRange>> = vec![
+            RangeInterest::new("127.0.0.0/32".parse().unwrap(), false),
+            RangeInterest::new("127.0.0.1/32".parse().unwrap(), true),
+            RangeInterest::new("127.0.0.0/31".parse().unwrap(), true),
+            RangeInterest::new("127.0.1.0/32".parse().unwrap(), false),
+            RangeInterest::new("127.0.1.1/32".parse().unwrap(), false),
+            RangeInterest::new("127.0.1.0/31".parse().unwrap(), false),
         ];
-        let len = merge_networks_slice(&mut networks);
-        networks.truncate(len);
-        networks.sort_unstable_by(sort_standard);
-        assert_eq!(networks.len(), 2);
+        let len = merge_ranges_slice(&mut ranges);
+        ranges.truncate(len);
+        ranges.sort_unstable_by(sort_standard);
+        assert_eq!(ranges.len(), 2);
         assert_eq!(
-            networks[0],
-            NetworkInterest::new("127.0.0.0/31".parse().unwrap(), true)
+            ranges[0],
+            RangeInterest::new("127.0.0.0/31".parse().unwrap(), true)
         );
         assert_eq!(
-            networks[1],
-            NetworkInterest::new("127.0.1.0/31".parse().unwrap(), false)
+            ranges[1],
+            RangeInterest::new("127.0.1.0/31".parse().unwrap(), false)
         );
     }
 
     #[test]
     fn test_merge_1() {
-        let mut networks: Vec<NetworkInterest<IpNetwork>> = vec![
-            NetworkInterest::new("127.0.0.0/31".parse().unwrap(), false),
-            NetworkInterest::new("127.0.0.2/31".parse().unwrap(), true),
-            NetworkInterest::new("127.0.0.4/31".parse().unwrap(), true),
-            NetworkInterest::new("127.0.0.8/31".parse().unwrap(), true),
-            NetworkInterest::new("127.0.0.10/31".parse().unwrap(), true),
+        let mut ranges: Vec<RangeInterest<IpRange>> = vec![
+            RangeInterest::new("127.0.0.0/31".parse().unwrap(), false),
+            RangeInterest::new("127.0.0.2/31".parse().unwrap(), true),
+            RangeInterest::new("127.0.0.4/31".parse().unwrap(), true),
+            RangeInterest::new("127.0.0.8/31".parse().unwrap(), true),
+            RangeInterest::new("127.0.0.10/31".parse().unwrap(), true),
         ];
-        let len = merge_networks_slice(&mut networks);
-        networks.truncate(len);
-        networks.sort_unstable_by(sort_standard);
-        assert_eq!(networks.len(), 3);
+        let len = merge_ranges_slice(&mut ranges);
+        ranges.truncate(len);
+        ranges.sort_unstable_by(sort_standard);
+        assert_eq!(ranges.len(), 3);
         assert_eq!(
-            networks[0],
-            NetworkInterest::new("127.0.0.0/30".parse().unwrap(), true)
+            ranges[0],
+            RangeInterest::new("127.0.0.0/30".parse().unwrap(), true)
         );
         assert_eq!(
-            networks[1],
-            NetworkInterest::new("127.0.0.4/31".parse().unwrap(), true)
+            ranges[1],
+            RangeInterest::new("127.0.0.4/31".parse().unwrap(), true)
         );
         assert_eq!(
-            networks[2],
-            NetworkInterest::new("127.0.0.8/30".parse().unwrap(), true)
+            ranges[2],
+            RangeInterest::new("127.0.0.8/30".parse().unwrap(), true)
         );
     }
 
     #[test]
     fn test_merge_2() {
-        let mut networks: Vec<NetworkInterest<IpNetwork>> = vec![
-            NetworkInterest::new("127.0.0.0/31".parse().unwrap(), false),
-            NetworkInterest::new("127.0.0.2/31".parse().unwrap(), true),
-            NetworkInterest::new("127.0.0.4/31".parse().unwrap(), true),
-            NetworkInterest::new("127.0.0.6/31".parse().unwrap(), true),
+        let mut ranges: Vec<RangeInterest<IpRange>> = vec![
+            RangeInterest::new("127.0.0.0/31".parse().unwrap(), false),
+            RangeInterest::new("127.0.0.2/31".parse().unwrap(), true),
+            RangeInterest::new("127.0.0.4/31".parse().unwrap(), true),
+            RangeInterest::new("127.0.0.6/31".parse().unwrap(), true),
         ];
-        let len = merge_networks_slice(&mut networks);
-        networks.truncate(len);
-        networks.sort_unstable_by(sort_standard);
-        assert_eq!(networks.len(), 1);
+        let len = merge_ranges_slice(&mut ranges);
+        ranges.truncate(len);
+        ranges.sort_unstable_by(sort_standard);
+        assert_eq!(ranges.len(), 1);
         assert_eq!(
-            networks[0],
-            NetworkInterest::new("127.0.0.0/29".parse().unwrap(), true)
+            ranges[0],
+            RangeInterest::new("127.0.0.0/29".parse().unwrap(), true)
         );
     }
 
     #[test]
     fn test_merge_3() {
-        let mut networks: Vec<NetworkInterest<IpNetwork>> = vec![
-            NetworkInterest::new("127.0.0.0/31".parse().unwrap(), false),
-            NetworkInterest::new("127.0.0.2/31".parse().unwrap(), true),
-            NetworkInterest::new("127.0.0.0/30".parse().unwrap(), true),
-            NetworkInterest::new("127.0.0.4/30".parse().unwrap(), true),
-            NetworkInterest::new("127.0.0.8/31".parse().unwrap(), true),
-            NetworkInterest::new("127.0.0.10/31".parse().unwrap(), true),
-            NetworkInterest::new("127.0.4.0/23".parse().unwrap(), true),
-            NetworkInterest::new("127.0.6.0/23".parse().unwrap(), true),
+        let mut ranges: Vec<RangeInterest<IpRange>> = vec![
+            RangeInterest::new("127.0.0.0/31".parse().unwrap(), false),
+            RangeInterest::new("127.0.0.2/31".parse().unwrap(), true),
+            RangeInterest::new("127.0.0.0/30".parse().unwrap(), true),
+            RangeInterest::new("127.0.0.4/30".parse().unwrap(), true),
+            RangeInterest::new("127.0.0.8/31".parse().unwrap(), true),
+            RangeInterest::new("127.0.0.10/31".parse().unwrap(), true),
+            RangeInterest::new("127.0.4.0/23".parse().unwrap(), true),
+            RangeInterest::new("127.0.6.0/23".parse().unwrap(), true),
         ];
-        let len = merge_networks_slice(&mut networks);
-        networks.truncate(len);
-        networks.sort_unstable_by(sort_standard);
-        assert_eq!(networks.len(), 3);
+        let len = merge_ranges_slice(&mut ranges);
+        ranges.truncate(len);
+        ranges.sort_unstable_by(sort_standard);
+        assert_eq!(ranges.len(), 3);
         assert_eq!(
-            networks[0],
-            NetworkInterest::new("127.0.0.0/29".parse().unwrap(), true)
+            ranges[0],
+            RangeInterest::new("127.0.0.0/29".parse().unwrap(), true)
         );
         assert_eq!(
-            networks[1],
-            NetworkInterest::new("127.0.0.8/30".parse().unwrap(), true)
+            ranges[1],
+            RangeInterest::new("127.0.0.8/30".parse().unwrap(), true)
         );
         assert_eq!(
-            networks[2],
-            NetworkInterest::new("127.0.4.0/22".parse().unwrap(), true)
+            ranges[2],
+            RangeInterest::new("127.0.4.0/22".parse().unwrap(), true)
         );
     }
 }
