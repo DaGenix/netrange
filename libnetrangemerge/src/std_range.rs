@@ -5,6 +5,7 @@ use std::fmt::{self, Debug, Display, Formatter};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
+/// The prefix_length was invalid (eg: 33 for an ipv4 address)
 pub struct InvalidPrefixLengthError {
     prefix_length: u8,
     max_length: u8,
@@ -26,6 +27,9 @@ impl Display for InvalidPrefixLengthError {
     }
 }
 
+/// The host_address was not the first address of the described range.
+/// For example, attempting to parse `127.0.0.1/24` will result in this
+/// error because the first address of the range is actually `127.0.0.0`.
 pub struct InvalidHostAddressError {
     host_address: IpAddr,
     prefix_length: u8,
@@ -49,6 +53,7 @@ impl Display for InvalidHostAddressError {
     }
 }
 
+/// An error indicating why a range instance could not be constructed.
 pub enum InvalidRangeError {
     InvalidPrefixLength(InvalidPrefixLengthError),
     InvalidHostAddress(InvalidHostAddressError),
@@ -71,6 +76,10 @@ impl Display for InvalidRangeError {
 
 impl Error for InvalidRangeError {}
 
+/// An error indicating why a range instance could not be parsed.
+/// For example, the address part of the string could be invalid (eg: "127.0.0.0.0.0/8").
+/// Or, the prefix_length may not be a u8 (eg: "999" or "abc"). Or, the
+/// passed in string may be fully invalid (eg: "lasjdskdsl").
 pub struct UnparseableRangeError {
     text: String,
 }
@@ -91,6 +100,8 @@ impl Display for UnparseableRangeError {
     }
 }
 
+/// `InvalidRangeError` contains information about why a range
+/// instance could not be parsed.
 pub enum RangeParseError {
     InvalidPrefixLength(InvalidPrefixLengthError),
     InvalidHostAddress(InvalidHostAddressError),
@@ -115,6 +126,20 @@ impl Display for RangeParseError {
 
 impl Error for RangeParseError {}
 
+/// An `IpRange` represents a network range that may be either
+/// an ipv4 or an ipv6 range. If you are only working with
+/// ipv4 addresses, it may be better to use [`Ipv4Range`] instead
+/// as that type is smaller and thus performance somewhat better.
+///
+/// An `IpRange` may either be constructed using its `new` method
+/// or may be parsed from a string using its [`FromStr`] implementation.
+///
+/// # Example
+///
+/// ```
+/// # use libnetrangemerge::IpRange;
+/// let ip_range: IpRange = "127.0.0.0/8".parse().expect("Range was invalid");
+/// ```
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct IpRange {
     host_address: IpAddr,
@@ -122,6 +147,7 @@ pub struct IpRange {
 }
 
 impl IpRange {
+    /// Create a new `IpRange` value.
     pub fn new(host_address: IpAddr, prefix_length: u8) -> Result<IpRange, InvalidRangeError> {
         match host_address {
             IpAddr::V4(_) => {
@@ -204,11 +230,9 @@ impl Display for IpRange {
 }
 
 fn parse_error<T>(s: &str) -> Result<T, RangeParseError> {
-    Err(RangeParseError::UnparseableRange(
-        UnparseableRangeError {
-            text: s.to_string(),
-        },
-    ))
+    Err(RangeParseError::UnparseableRange(UnparseableRangeError {
+        text: s.to_string(),
+    }))
 }
 
 impl FromStr for IpRange {
@@ -248,6 +272,17 @@ impl FromStr for IpRange {
     }
 }
 
+/// An `Ipv4Range` represents an ipv4 network range.
+///
+/// An `Ipv4Range` may either be constructed using its `new` method
+/// or may be parsed from a string using its [`FromStr`] implementation.
+///
+/// # Example
+///
+/// ```
+/// # use libnetrangemerge::Ipv4Range;
+/// let ip_range: Ipv4Range = "127.0.0.0/8".parse().expect("Range was invalid");
+/// ```
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Ipv4Range {
     host_address: Ipv4Addr,
@@ -255,10 +290,8 @@ pub struct Ipv4Range {
 }
 
 impl Ipv4Range {
-    pub fn new(
-        host_address: Ipv4Addr,
-        prefix_length: u8,
-    ) -> Result<Ipv4Range, InvalidRangeError> {
+    /// Create a new `IpRange` value.
+    pub fn new(host_address: Ipv4Addr, prefix_length: u8) -> Result<Ipv4Range, InvalidRangeError> {
         if prefix_length > 32 {
             return Err(InvalidRangeError::InvalidPrefixLength(
                 InvalidPrefixLengthError {
@@ -362,6 +395,17 @@ impl FromStr for Ipv4Range {
     }
 }
 
+/// An `Ipv6Range` represents an ipv6 network range.
+///
+/// An `Ipv6Range` may either be constructed using its `new` method
+/// or may be parsed from a string using its [`FromStr`] implementation.
+///
+/// # Example
+///
+/// ```
+/// # use libnetrangemerge::Ipv6Range;
+/// let ip_range: Ipv6Range = "2600::/32".parse().expect("Range was invalid");
+/// ```
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Ipv6Range {
     host_address: Ipv6Addr,
@@ -369,10 +413,8 @@ pub struct Ipv6Range {
 }
 
 impl Ipv6Range {
-    pub fn new(
-        host_address: Ipv6Addr,
-        prefix_length: u8,
-    ) -> Result<Ipv6Range, InvalidRangeError> {
+    /// Create a new `IpRange` value.
+    pub fn new(host_address: Ipv6Addr, prefix_length: u8) -> Result<Ipv6Range, InvalidRangeError> {
         if prefix_length > 128 {
             return Err(InvalidRangeError::InvalidPrefixLength(
                 InvalidPrefixLengthError {

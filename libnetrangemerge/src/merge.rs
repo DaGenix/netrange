@@ -20,10 +20,7 @@ fn dummies_first<R: Range>(a: &RangeInterest<R>, b: &RangeInterest<R>) -> Option
 fn sort_before_merging<R: Range>(a: &RangeInterest<R>, b: &RangeInterest<R>) -> Ordering {
     let ipv4_first = a.range().is_ipv6().cmp(&a.range().is_ipv6());
     let smaller_addresses_first = a.range().host_address().cmp(&b.range().host_address());
-    let bigger_ranges_first = a
-        .range()
-        .prefix_length()
-        .cmp(&b.range().prefix_length());
+    let bigger_ranges_first = a.range().prefix_length().cmp(&b.range().prefix_length());
     ipv4_first
         .then(smaller_addresses_first)
         .then(bigger_ranges_first)
@@ -51,8 +48,7 @@ fn sort_during_merging<R: Range>(a: &RangeInterest<R>, b: &RangeInterest<R>) -> 
 fn compact<R: Range>(ranges: &mut [RangeInterest<R>]) -> usize {
     if let Some(mut open_idx) = ranges.iter().position(|x| x.is_dummy()) {
         let mut start_search = open_idx + 1;
-        while let Some(next_item_idx) = ranges[start_search..].iter().position(|x| !x.is_dummy())
-        {
+        while let Some(next_item_idx) = ranges[start_search..].iter().position(|x| !x.is_dummy()) {
             ranges[open_idx] = ranges[start_search + next_item_idx].clone();
             ranges[start_search + next_item_idx].set_dummy();
             open_idx += 1;
@@ -181,6 +177,29 @@ fn merge_ranges_in_place<R: Range>(ranges: &mut [RangeInterest<R>]) {
     }
 }
 
+/// Merges all provided ranges in place, returning the number of valid ranges.
+///
+/// As this operation is performed in place, after the operation is complete
+/// some number of ranges at the end of the input slice may no longer be
+/// valid. Attempting to access them in any way will panic!().
+///
+/// This function does not allocate and is no_std compatible.
+///
+/// # Example
+///
+/// ```
+/// use libnetrangemerge::{RangeInterest, IpRange, merge_ranges_slice};
+///
+/// let mut ranges: Vec<RangeInterest<IpRange>> = vec![
+///     RangeInterest::new("127.0.0.8/29".parse().unwrap(), false),
+///     RangeInterest::new("127.0.0.16/29".parse().unwrap(), true),
+///     RangeInterest::new("0.0.0.0/0".parse().unwrap(), false),
+/// ];
+///
+/// let len = merge_ranges_slice(&mut ranges);
+///
+/// ranges.truncate(len);
+/// ```
 pub fn merge_ranges_slice<R: Range>(ranges: &mut [RangeInterest<R>]) -> usize {
     ranges.sort_unstable_by(sort_before_merging);
 
@@ -220,10 +239,7 @@ mod test {
     fn sort_standard<R: Range>(a: &RangeInterest<R>, b: &RangeInterest<R>) -> Ordering {
         let ipv4_first = a.range().is_ipv6().cmp(&a.range().is_ipv6());
         let smaller_addresses_first = a.range().host_address().cmp(&b.range().host_address());
-        let bigger_ranges_first = a
-            .range()
-            .prefix_length()
-            .cmp(&b.range().prefix_length());
+        let bigger_ranges_first = a.range().prefix_length().cmp(&b.range().prefix_length());
         ipv4_first
             .then(smaller_addresses_first)
             .then(bigger_ranges_first)
