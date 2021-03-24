@@ -1,7 +1,6 @@
 use crate::commands::get_ranges::NetworkWithMetadata;
 use anyhow::{bail, Error};
-use cidr::{Cidr, Inet};
-use libnetrangemerge::{merge_networks, IpNetwork, NetworkInterest};
+use libnetrangemerge::IpNetwork;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::io;

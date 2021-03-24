@@ -1,11 +1,11 @@
+use crate::providers::aws::SELECTED_KNOWN_AMAZON_IP_RANGES;
+use crate::providers::azure::SELECTED_KNOWN_AZURE_IP_RANGES;
 use crate::providers::{aws, azure, gcp};
 use crate::GetRangesOptions;
 use anyhow::{bail, Error};
-use libnetrangemerge::{merge_networks, IpNetwork, NetworkInterest, Network};
+use libnetrangemerge::{merge_networks, IpNetwork, Network, NetworkInterest};
 use std::collections::HashMap;
 use std::fs::File;
-use crate::providers::aws::SELECTED_KNOWN_AMAZON_IP_RANGES;
-use crate::providers::azure::SELECTED_KNOWN_AZURE_IP_RANGES;
 use std::str::FromStr;
 
 pub enum MetadataValue {
@@ -40,7 +40,7 @@ impl NetworkWithMetadata {
 }
 
 pub fn get_ranges_command(options: GetRangesOptions) -> Result<(), Error> {
-    let (mut ranges, known_ranges) = match options.service.as_str() {
+    let (ranges, known_ranges) = match options.service.as_str() {
         "aws" => {
             let ranges = if let Some(path) = options.file {
                 let f = File::open(&path)?;
@@ -56,7 +56,7 @@ pub fn get_ranges_command(options: GetRangesOptions) -> Result<(), Error> {
                 let f = File::open(&path)?;
                 azure::load_ranges(f)
             } else {
-                let r = aws::fetch_ranges()?;
+                let r = azure::fetch_ranges()?;
                 azure::load_ranges(r)
             }?;
             (ranges, SELECTED_KNOWN_AZURE_IP_RANGES)
@@ -66,13 +66,13 @@ pub fn get_ranges_command(options: GetRangesOptions) -> Result<(), Error> {
                 let f = File::open(&path)?;
                 gcp::load_ranges(f)
             } else {
-                let r = aws::fetch_ranges()?;
+                let r = gcp::fetch_ranges()?;
                 gcp::load_ranges(r)
             }?;
             let tmp: &'static [&str] = &[];
             (ranges, tmp)
         }
-        x => bail!("Invalid service: {}", x)
+        x => bail!("Invalid service: {}", x),
     };
 
     let lua = if let Some(filter_function) = options.filter.as_ref() {

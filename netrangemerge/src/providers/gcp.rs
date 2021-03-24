@@ -1,6 +1,6 @@
 use crate::commands::get_ranges::NetworkWithMetadata;
 use anyhow::{bail, Error};
-use libnetrangemerge::{merge_networks, IpNetwork, NetworkInterest};
+use libnetrangemerge::IpNetwork;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::io;
@@ -33,18 +33,22 @@ pub fn fetch_ranges() -> Result<reqwest::blocking::Response, Error> {
 
 pub fn load_ranges<R: io::Read>(reader: R) -> Result<Vec<NetworkWithMetadata>, Error> {
     let ranges: GcpRanges = serde_json::from_reader(reader)?;
-    ranges.prefixes.into_iter().map(|range| {
-        let mut metadata = HashMap::new();
-        metadata.insert("service", range.service.into());
-        metadata.insert("scope", range.scope.into());
+    ranges
+        .prefixes
+        .into_iter()
+        .map(|range| {
+            let mut metadata = HashMap::new();
+            metadata.insert("service", range.service.into());
+            metadata.insert("scope", range.scope.into());
 
-        let ranges = if let Some(r) = range.ipv4Prefix {
-            vec![IpNetwork::from_str(&r)?]
-        } else if let Some(r) = range.ipv6Prefix {
-            vec![IpNetwork::from_str(&r)?]
-        } else {
-            bail!("No ipv4 or ipv6 prefix found in element.")
-        };
-        Ok(NetworkWithMetadata::new(metadata, ranges))
-    }).collect()
+            let ranges = if let Some(r) = range.ipv4Prefix {
+                vec![IpNetwork::from_str(&r)?]
+            } else if let Some(r) = range.ipv6Prefix {
+                vec![IpNetwork::from_str(&r)?]
+            } else {
+                bail!("No ipv4 or ipv6 prefix found in element.")
+            };
+            Ok(NetworkWithMetadata::new(metadata, ranges))
+        })
+        .collect()
 }
