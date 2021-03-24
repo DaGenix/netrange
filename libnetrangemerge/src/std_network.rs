@@ -122,7 +122,7 @@ pub struct IpNetwork {
 }
 
 impl IpNetwork {
-    fn new(host_address: IpAddr, network_length: u8) -> Result<IpNetwork, InvalidNetworkError> {
+    pub fn new(host_address: IpAddr, network_length: u8) -> Result<IpNetwork, InvalidNetworkError> {
         match host_address {
             IpAddr::V4(_) => {
                 if network_length > 32 {
@@ -255,7 +255,7 @@ pub struct Ipv4Network {
 }
 
 impl Ipv4Network {
-    fn new(host_address: Ipv4Addr, network_length: u8) -> Result<Ipv4Network, InvalidNetworkError> {
+    pub fn new(host_address: Ipv4Addr, network_length: u8) -> Result<Ipv4Network, InvalidNetworkError> {
         if network_length > 32 {
             return Err(InvalidNetworkError::InvalidNetworkLength(
                 InvalidNetworkLengthError {
@@ -366,7 +366,7 @@ pub struct Ipv6Network {
 }
 
 impl Ipv6Network {
-    fn new(host_address: Ipv6Addr, network_length: u8) -> Result<Ipv6Network, InvalidNetworkError> {
+    pub fn new(host_address: Ipv6Addr, network_length: u8) -> Result<Ipv6Network, InvalidNetworkError> {
         if network_length > 128 {
             return Err(InvalidNetworkError::InvalidNetworkLength(
                 InvalidNetworkLengthError {
