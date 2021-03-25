@@ -63,6 +63,16 @@ impl<R: Range> RangeInterest<R> {
         }
     }
 
+    /// Return the value of the `interesting` flag.
+    pub fn set_interesting(&mut self, intersting: bool) {
+        match &mut self.state {
+            State::Normal {
+                interesting: int, ..
+            } => *int = intersting,
+            State::Dummy => panic!("RangeInterest is invalid"),
+        }
+    }
+
     /// Unwrap the `NetworkInterest` and return the contained
     /// `range` value.
     pub fn unwrap(self) -> R {
