@@ -1,7 +1,8 @@
-use crate::providers::aws::SELECTED_KNOWN_AMAZON_IP_RANGES;
-use crate::providers::azure::SELECTED_KNOWN_AZURE_IP_RANGES;
-use crate::providers::{aws, azure, gcp};
-use crate::GetRangesOptions;
+use crate::sources::aws::SELECTED_KNOWN_AMAZON_IP_RANGES;
+use crate::sources::azure::SELECTED_KNOWN_AZURE_IP_RANGES;
+use crate::sources::{aws, azure, gcp};
+use crate::utils::expand_ranges::expand_ranges;
+use crate::CloudGetOptions;
 use anyhow::{bail, Error};
 use cidr::{Cidr, Inet};
 use libnetrangemerge::{merge_ranges, IpRange, Range, RangeInterest};
@@ -41,7 +42,7 @@ impl NetworkWithMetadata {
     }
 }
 
-pub fn get_ranges_command(options: GetRangesOptions) -> Result<(), Error> {
+pub fn cloud_get_command(options: CloudGetOptions) -> Result<(), Error> {
     let (ranges, known_ranges) = match options.service.as_str() {
         "aws" => {
             let ranges = if let Some(path) = options.file {
@@ -118,20 +119,11 @@ pub fn get_ranges_command(options: GetRangesOptions) -> Result<(), Error> {
         }
     }
 
-    for net in all_networks.iter_mut() {
-        let min_size = if net.range().is_ipv6() && options.min_ipv6_network_size.is_some() {
-            Some(options.min_ipv6_network_size.unwrap())
-        } else if !net.range().is_ipv6() && options.min_ipv4_network_size.is_some() {
-            Some(options.min_ipv4_network_size.unwrap())
-        } else {
-            None
-        };
-        if let Some(min_size) = min_size {
-            let new_prefix_length = cmp::min(net.range().prefix_length(), min_size);
-            let inet = cidr::IpInet::new(*net.range().host_address(), new_prefix_length)?;
-            *net.range_mut() = IpRange::new(inet.network().first_address(), new_prefix_length)?;
-        }
-    }
+    expand_ranges(
+        &mut all_networks,
+        options.min_ipv4_network_size,
+        options.min_ipv6_network_size,
+    );
 
     if !options.ignore_known_ranges {
         for known_range in known_ranges {

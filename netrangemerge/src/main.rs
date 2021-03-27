@@ -1,14 +1,16 @@
 mod commands;
-mod providers;
+mod sources;
+mod utils;
 
-use crate::commands::download_sources::download_sources;
-use crate::commands::get_ranges::get_ranges_command;
+use crate::commands::cloud_download_source::cloud_download_source_command;
+use crate::commands::cloud_get::cloud_get_command;
+use crate::commands::merge::merge_command;
 use anyhow::Error;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-pub struct GetRangesOptions {
+pub struct CloudGetOptions {
     /// Network type to process ranges for ("azure", "aws", or "gcp")
     pub service: String,
 
@@ -42,32 +44,67 @@ pub struct GetRangesOptions {
 }
 
 #[derive(Debug, StructOpt)]
-pub struct DownloadSources {
+pub struct CloudDownloadSourceOptions {
     /// Network type to process ranges for ("azure", "aws", or "gcp")
     pub service: String,
 
     /// The file to write the data to ("-" for STDOUT)
     #[structopt(short, long)]
-    pub file: String,
+    pub file: PathBuf,
+}
+
+#[derive(Debug, StructOpt)]
+pub struct MergeOptions {
+    /// The files to read data from ("-" for STDIN)
+    pub file: PathBuf,
+
+    /// A minimum ipv4 network size. Any ranges smaller that this size are automatically
+    /// increased to this size. This option may help minimize the size of the output
+    /// network ranges.
+    #[structopt(long)]
+    pub min_ipv4_network_size: Option<u8>,
+
+    /// A minimum ipv6 network size. Any ranges smaller that this size are automatically
+    /// increased to this size. This option may help minimize the size of the output
+    /// network ranges.
+    #[structopt(long)]
+    pub min_ipv6_network_size: Option<u8>,
+}
+
+#[derive(Debug, StructOpt)]
+enum CloudCommands {
+    Get {
+        #[structopt(flatten)]
+        options: CloudGetOptions,
+    },
+    DownloadSource {
+        #[structopt(flatten)]
+        options: CloudDownloadSourceOptions,
+    },
 }
 
 #[derive(Debug, StructOpt)]
 enum Commands {
-    GetRanges {
+    Cloud {
         #[structopt(flatten)]
-        options: GetRangesOptions,
+        subcommand: CloudCommands,
     },
-    DownloadSources {
+    Merge {
         #[structopt(flatten)]
-        options: DownloadSources,
+        options: MergeOptions,
     },
 }
 
 fn main() -> Result<(), Error> {
     let opts = Commands::from_args();
     match opts {
-        Commands::GetRanges { options } => get_ranges_command(options)?,
-        Commands::DownloadSources { options } => download_sources(options)?,
+        Commands::Cloud {
+            subcommand: CloudCommands::Get { options },
+        } => cloud_get_command(options)?,
+        Commands::Cloud {
+            subcommand: CloudCommands::DownloadSource { options },
+        } => cloud_download_source_command(options)?,
+        Commands::Merge { options } => merge_command(options)?,
     }
     Ok(())
 }

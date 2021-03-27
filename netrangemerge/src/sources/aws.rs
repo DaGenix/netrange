@@ -1,4 +1,4 @@
-use crate::commands::get_ranges::NetworkWithMetadata;
+use crate::commands::cloud_get::NetworkWithMetadata;
 use anyhow::Error;
 use libnetrangemerge::IpRange;
 use serde::Deserialize;
