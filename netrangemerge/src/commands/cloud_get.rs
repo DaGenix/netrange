@@ -4,9 +4,7 @@ use crate::sources::{aws, azure, gcp};
 use crate::utils::expand_ranges::expand_ranges;
 use crate::CloudGetOptions;
 use anyhow::{bail, Error};
-use cidr::{Cidr, Inet};
 use libnetrangemerge::{merge_ranges, IpRange, Range, RangeInterest};
-use std::cmp;
 use std::collections::HashMap;
 use std::fs::File;
 use std::str::FromStr;
@@ -107,6 +105,7 @@ pub fn cloud_get_command(options: CloudGetOptions) -> Result<(), Error> {
         for network in range.networks {
             let interesting = if let Some(lua) = lua.as_ref() {
                 lua.context(|ctx| -> Result<bool, Error> {
+                    ctx.globals().set("is_ipv4", !network.is_ipv6())?;
                     ctx.globals().set("is_ipv6", network.is_ipv6())?;
                     let func: rlua::Function<'_> = ctx.globals().get("func")?;
                     Ok(func.call(())?)
@@ -134,7 +133,9 @@ pub fn cloud_get_command(options: CloudGetOptions) -> Result<(), Error> {
         }
     }
 
-    merge_ranges(&mut all_networks);
+    if !options.dont_merge {
+        merge_ranges(&mut all_networks);
+    }
 
     for network in all_networks {
         if network.is_interesting() {

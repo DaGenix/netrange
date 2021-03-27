@@ -41,6 +41,10 @@ pub struct CloudGetOptions {
     /// network ranges.
     #[structopt(long)]
     pub min_ipv6_network_size: Option<u8>,
+
+    /// Skip merging adjacent ranges
+    #[structopt(long)]
+    pub dont_merge: bool,
 }
 
 #[derive(Debug, StructOpt)]
