@@ -1,4 +1,4 @@
-use crate::commands::cloud_get::NetworkWithMetadata;
+use crate::utils::filter::NetworkWithMetadata;
 use anyhow::{bail, Error};
 use libnetrangemerge::IpRange;
 use serde::Deserialize;
@@ -32,7 +32,7 @@ pub fn fetch_ranges() -> Result<reqwest::blocking::Response, Error> {
 }
 
 pub fn load_ranges<R: io::Read>(reader: R) -> Result<Vec<NetworkWithMetadata>, Error> {
-    let ranges: GcpRanges = serde_json::from_reader(reader)?;
+    let ranges: GcpRanges = serde_json::from_reader(io::BufReader::new(reader))?;
     ranges
         .prefixes
         .into_iter()

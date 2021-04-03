@@ -2,26 +2,54 @@ mod commands;
 mod sources;
 mod utils;
 
-use crate::commands::cloud_download_source::cloud_download_source_command;
-use crate::commands::cloud_get::cloud_get_command;
+// use crate::commands::cloud_download_source::cloud_download_source_command;
+// use crate::commands::cloud_get::cloud_get_command;
 use crate::commands::merge::merge_command;
 use anyhow::Error;
 use std::path::PathBuf;
+use structopt::clap::AppSettings;
 use structopt::StructOpt;
+use crate::commands::cloud_get::cloud_get_command;
+use crate::commands::cloud_read::cloud_read_command;
+
+/*
+Download and save:      | nrm cloud get aws
+Merge from STDIN        | nrm cloud merge aws <file.json>
+Download then merge     | nrm cloud get-merge aws
+Download and save:      | nrm cloud read aws <file.json>
+Help on filter options: | nrm cloud filter-help aws
+
+Merge text ranges:      | nrm merge <file.txt>
+*/
+
+const CLOUD_SERVICE_NAMES: &'static [&'static str] = &["azure", "aws", "gcp"];
 
 #[derive(Debug, StructOpt)]
 pub struct CloudGetOptions {
-    /// Network type to process ranges for ("azure", "aws", or "gcp")
+    /// Cloud provider
+    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
+    pub service: String,
+}
+
+/// This is a test!!!
+#[derive(Debug, StructOpt)]
+pub struct CloudMergeOptions {
+    /// Cloud provider
+    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
     pub service: String,
 
-    /// File to load the ip ranges from. If not specified, the ranges
-    /// are fetched from the the service provider.
+    /// File to load the ip ranges from. STDIN is used if not
+    /// specified.
     #[structopt(short, long)]
     pub file: Option<PathBuf>,
 
     /// Lua filter program to select the ranges of interest.
-    #[structopt(long)]
+    #[structopt(long, conflicts_with = "filter-file")]
     pub filter: Option<String>,
+
+    /// Path of a file containing a Lua filter program to select the ranges of interest.
+    #[structopt(long)]
+    pub filter_file: Option<PathBuf>,
 
     /// By default, we include some (currently) known ranges when
     /// trying to minimize the output. If this option is set, we will
@@ -41,26 +69,78 @@ pub struct CloudGetOptions {
     /// network ranges.
     #[structopt(long)]
     pub min_ipv6_network_size: Option<u8>,
-
-    /// Skip merging adjacent ranges
-    #[structopt(long)]
-    pub dont_merge: bool,
 }
 
 #[derive(Debug, StructOpt)]
-pub struct CloudDownloadSourceOptions {
-    /// Network type to process ranges for ("azure", "aws", or "gcp")
+pub struct CloudGetMergeOptions {
+    /// Cloud provider
+    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
     pub service: String,
 
-    /// The file to write the data to ("-" for STDOUT)
-    #[structopt(short, long)]
-    pub file: PathBuf,
+    /// Lua filter program to select the ranges of interest.
+    #[structopt(long, conflicts_with = "filter-file")]
+    pub filter: Option<String>,
+
+    /// Path of a file containing a Lua filter program to select the ranges of interest.
+    #[structopt(long)]
+    pub filter_file: Option<PathBuf>,
+
+    /// By default, we include some (currently) known ranges when
+    /// trying to minimize the output. If this option is set, we will
+    /// ignore those ranges. This may produce a larger output set but
+    /// may be useful in case out know ranges become incorrect in the future.
+    #[structopt(long)]
+    pub ignore_known_ranges: bool,
+
+    /// A minimum ipv4 network size. Any ranges smaller that this size are automatically
+    /// increased to this size. This option may help minimize the size of the output
+    /// network ranges.
+    #[structopt(long)]
+    pub min_ipv4_network_size: Option<u8>,
+
+    /// A minimum ipv6 network size. Any ranges smaller that this size are automatically
+    /// increased to this size. This option may help minimize the size of the output
+    /// network ranges.
+    #[structopt(long)]
+    pub min_ipv6_network_size: Option<u8>,
+}
+
+#[derive(Debug, StructOpt)]
+pub struct CloudReadOptions {
+    /// Cloud provider
+    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
+    pub service: String,
+
+    /// File to load the ip ranges from. STDIN is used if not
+    /// specified.
+    pub file: Option<PathBuf>,
+
+    /// Lua filter program to select the ranges of interest.
+    #[structopt(long, conflicts_with = "filter-file")]
+    pub filter: Option<String>,
+
+    /// Path of a file containing a Lua filter program to select the ranges of interest.
+    #[structopt(long)]
+    pub filter_file: Option<PathBuf>,
+}
+
+#[derive(Debug, StructOpt)]
+pub struct CloudFilterHelpOptions {
+    /// Cloud provider
+    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
+    pub service: String,
 }
 
 #[derive(Debug, StructOpt)]
 pub struct MergeOptions {
-    /// The files to read data from ("-" for STDIN)
-    pub file: PathBuf,
+    /// The file to read ranges from
+    pub file: Option<PathBuf>,
+
+    /// A file containing extra ranges to merge with the main set.
+    /// These ranges will be used to minimize the main set - but will not
+    /// otherwise appear in the output.
+    #[structopt(long)]
+    pub extra_file: Vec<PathBuf>,
 
     /// A minimum ipv4 network size. Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
@@ -81,13 +161,29 @@ enum CloudCommands {
         #[structopt(flatten)]
         options: CloudGetOptions,
     },
-    DownloadSource {
+    Merge {
         #[structopt(flatten)]
-        options: CloudDownloadSourceOptions,
+        options: CloudMergeOptions,
+    },
+    GetMerge {
+        #[structopt(flatten)]
+        options: CloudGetMergeOptions,
+    },
+    Read {
+        #[structopt(flatten)]
+        options: CloudReadOptions,
+    },
+    FilterHelp {
+        #[structopt(flatten)]
+        options: CloudFilterHelpOptions,
     },
 }
 
 #[derive(Debug, StructOpt)]
+#[structopt(global_setting = AppSettings::DeriveDisplayOrder)]
+#[structopt(global_setting = AppSettings::UnifiedHelpMessage)]
+#[structopt(global_setting = AppSettings::NextLineHelp)]
+#[structopt(global_setting = AppSettings::VersionlessSubcommands)]
 enum Commands {
     Cloud {
         #[structopt(flatten)]
@@ -99,16 +195,28 @@ enum Commands {
     },
 }
 
+// Merge from STDIN        | nrm cloud merge aws <file.json>
+// Download then merge     | nrm cloud get-merge aws
+// Download and save:      | nrm cloud read aws <file.json>
+
+// Help on filter options: | nrm cloud filter-help aws
+
 fn main() -> Result<(), Error> {
     let opts = Commands::from_args();
     match opts {
-        Commands::Cloud {
-            subcommand: CloudCommands::Get { options },
-        } => cloud_get_command(options)?,
-        Commands::Cloud {
-            subcommand: CloudCommands::DownloadSource { options },
-        } => cloud_download_source_command(options)?,
+        Commands::Cloud { subcommand: CloudCommands::Get { options }} => cloud_get_command(options)?,
+        Commands::Cloud { subcommand: CloudCommands::Read { options }} => cloud_read_command(options)?,
         Commands::Merge { options } => merge_command(options)?,
+        _ => unimplemented!(),
     }
+    // match opts {
+    //     Commands::Cloud {
+    //         subcommand: CloudCommands::Get { options },
+    //     } => cloud_get_command(options)?,
+    //     Commands::Cloud {
+    //         subcommand: CloudCommands::DownloadSource { options },
+    //     } => cloud_download_source_command(options)?,
+    //     Commands::Merge { options } => merge_command(options)?,
+    // }
     Ok(())
 }
