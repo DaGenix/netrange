@@ -1,13 +1,12 @@
 use crate::sources::{aws, azure, gcp};
-use crate::CloudReadOptions;
+use crate::utils::expand_ranges::expand_ranges;
+use crate::utils::filter::filter;
 use anyhow::{bail, Error};
+use libnetrangemerge::{merge_ranges, IpRange, RangeInterest};
 use std::fs::File;
 use std::io;
-use std::path::{Path, PathBuf};
-use crate::utils::filter::filter;
-use std::io::{Read, BufWriter, Write};
-use crate::utils::expand_ranges::expand_ranges;
-use libnetrangemerge::{Range as _, RangeInterest, IpRange, merge_ranges};
+use std::io::{BufWriter, Read, Write};
+use std::path::PathBuf;
 use std::str::FromStr as _;
 
 pub fn cloud_process_ranges(
