@@ -11,6 +11,8 @@ use anyhow::Error;
 use std::path::PathBuf;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
+use crate::commands::cloud_get_merge::cloud_get_merge_command;
+use crate::commands::cloud_get_read::cloud_get_read_command;
 
 /*
 Download and save:      | nrm cloud get aws
@@ -125,6 +127,21 @@ pub struct CloudReadOptions {
 }
 
 #[derive(Debug, StructOpt)]
+pub struct CloudGetReadOptions {
+    /// Cloud provider
+    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
+    pub service: String,
+
+    /// Lua filter program to select the ranges of interest.
+    #[structopt(long, conflicts_with = "filter-file")]
+    pub filter: Option<String>,
+
+    /// Path of a file containing a Lua filter program to select the ranges of interest.
+    #[structopt(long)]
+    pub filter_file: Option<PathBuf>,
+}
+
+#[derive(Debug, StructOpt)]
 pub struct CloudFilterHelpOptions {
     /// Cloud provider
     #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
@@ -173,6 +190,10 @@ enum CloudCommands {
         #[structopt(flatten)]
         options: CloudReadOptions,
     },
+    GetRead {
+        #[structopt(flatten)]
+        options: CloudGetReadOptions,
+    },
     FilterHelp {
         #[structopt(flatten)]
         options: CloudFilterHelpOptions,
@@ -198,6 +219,7 @@ enum Commands {
 // Merge from STDIN        | nrm cloud merge aws <file.json>
 // Download then merge     | nrm cloud get-merge aws
 // Download and save:      | nrm cloud read aws <file.json>
+// Download and save:      | nrm cloud get-read aws <file.json>
 
 // Help on filter options: | nrm cloud filter-help aws
 
@@ -208,8 +230,14 @@ fn main() -> Result<(), Error> {
             subcommand: CloudCommands::Get { options },
         } => cloud_get_command(options)?,
         Commands::Cloud {
+            subcommand: CloudCommands::GetMerge { options },
+        } => cloud_get_merge_command(options)?,
+        Commands::Cloud {
             subcommand: CloudCommands::Read { options },
         } => cloud_read_command(options)?,
+        Commands::Cloud {
+            subcommand: CloudCommands::GetRead { options },
+        } => cloud_get_read_command(options)?,
         Commands::Merge { options } => merge_command(options)?,
         _ => unimplemented!(),
     }

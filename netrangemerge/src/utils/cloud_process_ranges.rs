@@ -1,6 +1,6 @@
 use crate::sources::{aws, azure, gcp};
 use crate::utils::expand_ranges::expand_ranges;
-use crate::utils::filter::filter;
+use crate::utils::filter::{filter, NetworkWithMetadata};
 use anyhow::{bail, Error};
 use libnetrangemerge::{merge_ranges, IpRange, RangeInterest};
 use std::fs::File;
@@ -10,8 +10,8 @@ use std::path::PathBuf;
 use std::str::FromStr as _;
 
 pub fn cloud_process_ranges(
-    service: &str,
-    file: Option<PathBuf>,
+    ranges: Vec<NetworkWithMetadata>,
+    known_ranges: &'static [&'static str],
     filter_program: Option<String>,
     filter_file: Option<PathBuf>,
     ignore_known_ranges: bool,
@@ -19,38 +19,6 @@ pub fn cloud_process_ranges(
     min_ipv6_network_size: Option<u8>,
     do_merge: bool,
 ) -> Result<(), Error> {
-    let (ranges, known_ranges) = match service {
-        "aws" => {
-            let ranges = if let Some(file) = file {
-                aws::load_ranges(File::open(&file)?)?
-            } else {
-                let stdin = io::stdin();
-                aws::load_ranges(stdin.lock())?
-            };
-            (ranges, aws::SELECTED_KNOWN_AMAZON_IP_RANGES)
-        }
-        "azure" => {
-            let ranges = if let Some(file) = file {
-                azure::load_ranges(File::open(&file)?)?
-            } else {
-                let stdin = io::stdin();
-                azure::load_ranges(stdin.lock())?
-            };
-            (ranges, azure::SELECTED_KNOWN_AZURE_IP_RANGES)
-        }
-        "gcp" => {
-            let ranges = if let Some(file) = file {
-                gcp::load_ranges(File::open(&file)?)?
-            } else {
-                let stdin = io::stdin();
-                gcp::load_ranges(stdin.lock())?
-            };
-            let tmp: &'static [&str] = &[];
-            (ranges, tmp)
-        }
-        x => bail!("Invalid service: {}", x),
-    };
-
     let mut filtered_ranges = if let Some(filter_program) = filter_program {
         filter(ranges, Some(&filter_program))?
     } else if let Some(filter_file) = filter_file {
