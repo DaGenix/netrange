@@ -12,8 +12,13 @@ use std::path::PathBuf;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
 
-const CLOUD_SERVICE_NAMES: &'static [&'static str] = &["azure", "aws", "gcp"];
+const CLOUD_SERVICE_NAMES: &'static [&'static str] = &["aws", "azure", "gcp"];
 
+/// Download the source file that contains the IP ranges that the service uses.
+///
+/// All currently supported cloud services use a JSON formatted file to provide
+/// the IP ranges that they use. However, other services supported in the future
+/// may use another format.
 #[derive(Debug, StructOpt)]
 pub struct CloudGetOptions {
     /// Cloud provider
@@ -21,7 +26,21 @@ pub struct CloudGetOptions {
     pub service: String,
 }
 
-/// This is a test!!!
+/// Load IP ranges for the given service and then try to minimize the set.
+///
+/// By default, all ranges are represented in the output - although,
+/// the number of ranges will hopefully be smaller than the total number
+/// in the source due to merging adjacent ranges. If you are interested
+/// in only a certain set of ranges, you can filter the source ranges
+/// using a LUA script which returns `true` for ranges that you care
+/// about and `false` for ranges that you do not.
+/// You may use the "cloud filter-help <service>" command to see what
+/// filtering parameters are available by service.
+///
+/// This command requires that the source IP ranges already have been
+/// downloaded such as with the "cloud get <service>" command. You may
+/// download and merge in just a single command by using the
+/// "cloud get-merge <service>" command instead.
 #[derive(Debug, StructOpt)]
 pub struct CloudMergeOptions {
     /// Cloud provider
@@ -40,6 +59,8 @@ pub struct CloudMergeOptions {
     #[structopt(long)]
     pub filter_file: Option<PathBuf>,
 
+    /// Don't use the statically known ranges for the service.
+    ///
     /// By default, we include some (currently) known ranges when
     /// trying to minimize the output. If this option is set, we will
     /// ignore those ranges. This may produce a larger output set but
@@ -47,19 +68,39 @@ pub struct CloudMergeOptions {
     #[structopt(long)]
     pub ignore_known_ranges: bool,
 
-    /// A minimum ipv4 network size. Any ranges smaller that this size are automatically
+    /// A minimum ipv4 network size.
+    ///
+    /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
     #[structopt(long)]
     pub min_ipv4_network_size: Option<u8>,
 
-    /// A minimum ipv6 network size. Any ranges smaller that this size are automatically
+    /// A minimum ipv6 network size.
+    ///
+    /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
     #[structopt(long)]
     pub min_ipv6_network_size: Option<u8>,
 }
 
+/// Download IP ranges for the given service and then try to minimize the set.
+///
+/// By default, all ranges are represented in the output - although,
+/// the number of ranges will hopefully be smaller than the total number
+/// in the source due to merging adjacent ranges. If you are interested
+/// in only a certain set of ranges, you can filter the source ranges
+/// using a LUA script which returns `true` for ranges that you care
+/// about and `false` for ranges that you do not.
+/// You may use the "cloud filter-help <service>" command to see what
+/// filtering parameters are available by service.
+///
+/// This command will re-download the source IP ranges every time it is
+/// invoked. This can be inefficient if you invoke this command multiple
+/// times. In such a case, you may want to consider using "cloud get <service>"
+/// to download the file once and then use "cloud merge <service>" to process
+/// the already downloaded file.
 #[derive(Debug, StructOpt)]
 pub struct CloudGetMergeOptions {
     /// Cloud provider
@@ -74,6 +115,8 @@ pub struct CloudGetMergeOptions {
     #[structopt(long)]
     pub filter_file: Option<PathBuf>,
 
+    /// Don't use the statically known ranges for the service.
+    ///
     /// By default, we include some (currently) known ranges when
     /// trying to minimize the output. If this option is set, we will
     /// ignore those ranges. This may produce a larger output set but
@@ -81,19 +124,37 @@ pub struct CloudGetMergeOptions {
     #[structopt(long)]
     pub ignore_known_ranges: bool,
 
-    /// A minimum ipv4 network size. Any ranges smaller that this size are automatically
+    /// A minimum ipv4 network size.
+    ///
+    /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
     #[structopt(long)]
     pub min_ipv4_network_size: Option<u8>,
 
-    /// A minimum ipv6 network size. Any ranges smaller that this size are automatically
+    /// A minimum ipv6 network size.
+    ///
+    /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
     #[structopt(long)]
     pub min_ipv6_network_size: Option<u8>,
 }
 
+/// Load IP ranges for the given service and print them out
+///
+/// By default, all ranges are represented in the output. Unlike in
+/// the "cloud merge" command, adjacent ranges are not merged. If you are interested
+/// in only a certain set of ranges, you can filter the source ranges
+/// using a LUA script which returns `true` for ranges that you care
+/// about and `false` for ranges that you do not.
+/// You may use the "cloud filter-help <service>" command to see what
+/// filtering parameters are available by service.
+///
+/// This command requires that the source IP ranges already have been
+/// downloaded such as with the "cloud get <service>" command. You may
+/// download and merge in just a single command by using the
+/// "cloud get-read <service>" command instead.
 #[derive(Debug, StructOpt)]
 pub struct CloudReadOptions {
     /// Cloud provider
@@ -113,6 +174,21 @@ pub struct CloudReadOptions {
     pub filter_file: Option<PathBuf>,
 }
 
+/// Load IP ranges for the given service and print them out
+///
+/// By default, all ranges are represented in the output. Unlike in
+/// the "cloud merge" command, adjacent ranges are not merged. If you are interested
+/// in only a certain set of ranges, you can filter the source ranges
+/// using a LUA script which returns `true` for ranges that you care
+/// about and `false` for ranges that you do not.
+/// You may use the "cloud filter-help <service>" command to see what
+/// filtering parameters are available by service.
+///
+/// This command will re-download the source IP ranges every time it is
+/// invoked. This can be inefficient if you invoke this command multiple
+/// times. In such a case, you may want to consider using "cloud get <service>"
+/// to download the file once and then use "cloud merge <service>" to process
+/// the already downloaded file.
 #[derive(Debug, StructOpt)]
 pub struct CloudGetReadOptions {
     /// Cloud provider
@@ -128,6 +204,7 @@ pub struct CloudGetReadOptions {
     pub filter_file: Option<PathBuf>,
 }
 
+/// Print information about parameters available to filter ranges
 #[derive(Debug, StructOpt)]
 pub struct CloudFilterHelpOptions {
     /// Cloud provider
@@ -135,30 +212,52 @@ pub struct CloudFilterHelpOptions {
     pub service: String,
 }
 
+/// Merge IP ranges to try to minimize the number of ranges
+///
+/// The source ranges should be provided either in a file or
+/// via STDIN with a single range per line.
+///
+/// The minimized set of ranges will be printed to STDOUT.
 #[derive(Debug, StructOpt)]
 pub struct MergeOptions {
     /// The file to read ranges from
     pub file: Option<PathBuf>,
 
+    /// Extra ranges that may be helpful to minimize the set
+    ///
     /// A file containing extra ranges to merge with the main set.
     /// These ranges will be used to minimize the main set - but will not
     /// otherwise appear in the output.
     #[structopt(long)]
     pub extra_file: Vec<PathBuf>,
 
-    /// A minimum ipv4 network size. Any ranges smaller that this size are automatically
+    /// Don't use the statically known ranges for the service.
+    ///
+    /// By default, we include some (currently) known ranges when
+    /// trying to minimize the output. If this option is set, we will
+    /// ignore those ranges. This may produce a larger output set but
+    /// may be useful in case out know ranges become incorrect in the future.
+    #[structopt(long)]
+    pub ignore_known_ranges: bool,
+
+    /// A minimum ipv4 network size.
+    ///
+    /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
     #[structopt(long)]
     pub min_ipv4_network_size: Option<u8>,
 
-    /// A minimum ipv6 network size. Any ranges smaller that this size are automatically
+    /// A minimum ipv6 network size.
+    ///
+    /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
     #[structopt(long)]
     pub min_ipv6_network_size: Option<u8>,
 }
 
+/// Commands for working with cloud service's IP ranges
 #[derive(Debug, StructOpt)]
 enum CloudCommands {
     Get {
@@ -187,10 +286,12 @@ enum CloudCommands {
     },
 }
 
+/// netrangemerge provides a command line interface to retrieve,
+/// filter, and merge adjacent IP ranges for various cloud
+/// providers.
 #[derive(Debug, StructOpt)]
 #[structopt(global_setting = AppSettings::DeriveDisplayOrder)]
 #[structopt(global_setting = AppSettings::UnifiedHelpMessage)]
-#[structopt(global_setting = AppSettings::NextLineHelp)]
 #[structopt(global_setting = AppSettings::VersionlessSubcommands)]
 enum Commands {
     Cloud {
@@ -202,13 +303,6 @@ enum Commands {
         options: MergeOptions,
     },
 }
-
-// Merge from STDIN        | nrm cloud merge aws <file.json>
-// Download then merge     | nrm cloud get-merge aws
-// Download and save:      | nrm cloud read aws <file.json>
-// Download and save:      | nrm cloud get-read aws <file.json>
-
-// Help on filter options: | nrm cloud filter-help aws
 
 fn main() -> Result<(), Error> {
     let opts = Commands::from_args();
