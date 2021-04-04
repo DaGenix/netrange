@@ -1,6 +1,6 @@
 use crate::utils::cloud_process_ranges::cloud_process_ranges;
-use crate::utils::load_ranges::{load_ranges, fetch_ranges};
-use crate::{CloudReadOptions, CloudGetMergeOptions, CloudGetReadOptions};
+use crate::utils::load_ranges::fetch_ranges;
+use crate::CloudGetReadOptions;
 use anyhow::Error;
 
 pub fn cloud_get_read_command(options: CloudGetReadOptions) -> Result<(), Error> {

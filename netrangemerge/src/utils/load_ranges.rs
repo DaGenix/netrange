@@ -1,13 +1,9 @@
 use crate::sources::{aws, azure, gcp};
-use crate::utils::expand_ranges::expand_ranges;
-use crate::utils::filter::{filter, NetworkWithMetadata};
+use crate::utils::filter::NetworkWithMetadata;
 use anyhow::{bail, Error};
-use libnetrangemerge::{merge_ranges, IpRange, RangeInterest};
 use std::fs::File;
 use std::io;
-use std::io::{BufWriter, Read, Write};
 use std::path::PathBuf;
-use std::str::FromStr as _;
 
 pub fn load_ranges(
     service: &str,

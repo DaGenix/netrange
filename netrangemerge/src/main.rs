@@ -5,14 +5,14 @@ mod utils;
 // use crate::commands::cloud_download_source::cloud_download_source_command;
 // use crate::commands::cloud_get::cloud_get_command;
 use crate::commands::cloud_get::cloud_get_command;
+use crate::commands::cloud_get_merge::cloud_get_merge_command;
+use crate::commands::cloud_get_read::cloud_get_read_command;
 use crate::commands::cloud_read::cloud_read_command;
 use crate::commands::merge::merge_command;
 use anyhow::Error;
 use std::path::PathBuf;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
-use crate::commands::cloud_get_merge::cloud_get_merge_command;
-use crate::commands::cloud_get_read::cloud_get_read_command;
 
 /*
 Download and save:      | nrm cloud get aws

@@ -1,7 +1,6 @@
-use crate::sources::{aws, azure, gcp};
 use crate::utils::expand_ranges::expand_ranges;
 use crate::utils::filter::{filter, NetworkWithMetadata};
-use anyhow::{bail, Error};
+use anyhow::Error;
 use libnetrangemerge::{merge_ranges, IpRange, RangeInterest};
 use std::fs::File;
 use std::io;
