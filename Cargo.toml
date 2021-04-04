@@ -1,6 +1,31 @@
+[package]
+name = "netrangemerge"
+version = "0.1.0"
+authors = ["Palmer Cox <p@lmercox.com>"]
+edition = "2018"
+license = "MIT/Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/DaGenix/netrangemerge"
+documentation = "https://github.com/DaGenix/netrangemerge"
+homepage = "https://github.com/DaGenix/netrangemerge"
+description = """
+A simple CLI utility to retrieve, filter, and merge adjacent
+IP ranges for various cloud providers.
+"""
+categories = ["network-programming", "algorithms", "command-line-utilities"]
+
 [workspace]
 members = [
     "libnetrangemerge",
-    "netrangemerge",
 ]
 
+[dependencies]
+anyhow = "1.0.38"
+rlua = "0.17.0"
+serde = { version = "1.0.123", features = ["derive"] }
+serde_json = "1.0.62"
+libnetrangemerge = { path = "libnetrangemerge" }
+structopt = "0.3.21"
+reqwest = { version = "0.11.2", features = ["blocking"] }
+regex = "1.4.3"
+cidr = "0.1.1"

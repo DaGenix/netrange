@@ -3,6 +3,17 @@ name = "libnetrangemerge"
 version = "0.1.0"
 authors = ["Palmer Cox <p@lmercox.com>"]
 edition = "2018"
+license = "MIT/Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/DaGenix/netrangemerge/tree/main/libnetrangemerge"
+documentation = "https://docs.rs/libnetrangemerge"
+homepage = "https://github.com/DaGenix/netrangemerge/tree/main/libnetrangemerge"
+description = """
+A implementation of an algorithm to merge overlapping and adjacent
+network ranges in order to create a minimal set of range values that
+covers the same parts of the overall network.
+"""
+categories = ["network-programming", "no-std", "algorithms"]
 
 [dependencies]
 cidr = "0.1.1"
