@@ -49,6 +49,16 @@ pub const SELECTED_KNOWN_AZURE_IP_RANGES: &[&'static str] = &[
     "2620:1EC::/36",
 ];
 
+pub const FILTER_HELP: &'static str = r###"The Azure service has the following filterable values:
+ * is_ipv4
+ * is_ipv6
+ * name
+ * id
+ * region
+ * regionId
+ * platform
+ * systemService"###;
+
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
 struct AzureRanges {
@@ -77,14 +87,16 @@ struct AzureRangeProperties {
 }
 
 pub fn fetch_ranges() -> Result<reqwest::blocking::Response, Error> {
-    let response = reqwest::blocking::get(
-        "https://www.microsoft.com/en-us/download/confirmation.aspx?id=56519",
-    )?;
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .get("https://www.microsoft.com/en-us/download/confirmation.aspx?id=56519")
+        .send()?
+        .error_for_status()?;
     let body = response.text()?;
     let regex = regex::Regex::new(r"https://download.*?\.json")?;
     if let Some(m) = regex.find(&body) {
         let url = m.as_str();
-        let response = reqwest::blocking::get(url)?;
+        let response = client.get(url).send()?.error_for_status()?;
         Ok(response)
     } else {
         bail!("Unable to find download URL for Azure IP range file");
@@ -92,8 +104,10 @@ pub fn fetch_ranges() -> Result<reqwest::blocking::Response, Error> {
 }
 
 #[allow(non_snake_case)]
-pub fn load_ranges<R: io::Read>(reader: R) -> Result<Vec<NetworkWithMetadata>, Error> {
-    let ranges: AzureRanges = serde_json::from_reader(io::BufReader::new(reader))?;
+pub fn load_ranges<R: io::Read>(reader: &mut R) -> Result<Vec<NetworkWithMetadata>, Error> {
+    let mut data = String::new();
+    reader.read_to_string(&mut data)?;
+    let ranges: AzureRanges = serde_json::from_str(&data)?;
     ranges
         .values
         .into_iter()

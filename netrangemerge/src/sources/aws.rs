@@ -48,6 +48,13 @@ pub const SELECTED_KNOWN_AMAZON_IP_RANGES: &[&'static str] = &[
     "2a05:d000::/25",
 ];
 
+pub const FILTER_HELP: &'static str = r###"The AWS service has the following filterable values:
+ * is_ipv4
+ * is_ipv6
+ * region
+ * service
+ * network_border_group"###;
+
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
 struct AwsRanges {
@@ -76,13 +83,16 @@ struct AwsIpv6Range {
 }
 
 pub fn fetch_ranges() -> Result<reqwest::blocking::Response, Error> {
-    Ok(reqwest::blocking::get(
-        "https://ip-ranges.amazonaws.com/ip-ranges.json",
-    )?)
+    Ok(
+        reqwest::blocking::get("https://ip-ranges.amazonaws.com/ip-ranges.json")?
+            .error_for_status()?,
+    )
 }
 
-pub fn load_ranges<R: io::Read>(reader: R) -> Result<Vec<NetworkWithMetadata>, Error> {
-    let ranges: AwsRanges = serde_json::from_reader(io::BufReader::new(reader))?;
+pub fn load_ranges<R: io::Read>(reader: &mut R) -> Result<Vec<NetworkWithMetadata>, Error> {
+    let mut data = String::new();
+    reader.read_to_string(&mut data)?;
+    let ranges: AwsRanges = serde_json::from_str(&data)?;
     let ipv4_ranges = ranges.prefixes.into_iter().map(|range| {
         let mut metadata = HashMap::new();
         metadata.insert("region", range.region.into());

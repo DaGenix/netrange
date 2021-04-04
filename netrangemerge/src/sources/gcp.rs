@@ -6,6 +6,12 @@ use std::collections::HashMap;
 use std::io;
 use std::str::FromStr;
 
+pub const FILTER_HELP: &'static str = r###"The GCP service has the following filterable values:
+ * is_ipv4
+ * is_ipv6
+ * service
+ * scope"###;
+
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
 #[allow(dead_code)]
@@ -26,13 +32,16 @@ struct GcpRange {
 }
 
 pub fn fetch_ranges() -> Result<reqwest::blocking::Response, Error> {
-    Ok(reqwest::blocking::get(
-        "https://www.gstatic.com/ipranges/cloud.json",
-    )?)
+    Ok(
+        reqwest::blocking::get("https://www.gstatic.com/ipranges/cloud.json")?
+            .error_for_status()?,
+    )
 }
 
-pub fn load_ranges<R: io::Read>(reader: R) -> Result<Vec<NetworkWithMetadata>, Error> {
-    let ranges: GcpRanges = serde_json::from_reader(io::BufReader::new(reader))?;
+pub fn load_ranges<R: io::Read>(reader: &mut R) -> Result<Vec<NetworkWithMetadata>, Error> {
+    let mut data = String::new();
+    reader.read_to_string(&mut data)?;
+    let ranges: GcpRanges = serde_json::from_str(&data)?;
     ranges
         .prefixes
         .into_iter()

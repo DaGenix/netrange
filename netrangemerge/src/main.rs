@@ -2,27 +2,15 @@ mod commands;
 mod sources;
 mod utils;
 
-// use crate::commands::cloud_download_source::cloud_download_source_command;
-// use crate::commands::cloud_get::cloud_get_command;
-use crate::commands::cloud_get::cloud_get_command;
-use crate::commands::cloud_get_merge::cloud_get_merge_command;
-use crate::commands::cloud_get_read::cloud_get_read_command;
-use crate::commands::cloud_read::cloud_read_command;
+use crate::commands::cloud::{
+    cloud_filter_help_command, cloud_get_command, cloud_get_merge_command, cloud_get_read_command,
+    cloud_merge_command, cloud_read_command,
+};
 use crate::commands::merge::merge_command;
 use anyhow::Error;
 use std::path::PathBuf;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
-
-/*
-Download and save:      | nrm cloud get aws
-Merge from STDIN        | nrm cloud merge aws <file.json>
-Download then merge     | nrm cloud get-merge aws
-Download and save:      | nrm cloud read aws <file.json>
-Help on filter options: | nrm cloud filter-help aws
-
-Merge text ranges:      | nrm merge <file.txt>
-*/
 
 const CLOUD_SERVICE_NAMES: &'static [&'static str] = &["azure", "aws", "gcp"];
 
@@ -42,7 +30,6 @@ pub struct CloudMergeOptions {
 
     /// File to load the ip ranges from. STDIN is used if not
     /// specified.
-    #[structopt(short, long)]
     pub file: Option<PathBuf>,
 
     /// Lua filter program to select the ranges of interest.
@@ -230,6 +217,9 @@ fn main() -> Result<(), Error> {
             subcommand: CloudCommands::Get { options },
         } => cloud_get_command(options)?,
         Commands::Cloud {
+            subcommand: CloudCommands::Merge { options },
+        } => cloud_merge_command(options)?,
+        Commands::Cloud {
             subcommand: CloudCommands::GetMerge { options },
         } => cloud_get_merge_command(options)?,
         Commands::Cloud {
@@ -238,17 +228,11 @@ fn main() -> Result<(), Error> {
         Commands::Cloud {
             subcommand: CloudCommands::GetRead { options },
         } => cloud_get_read_command(options)?,
+        Commands::Cloud {
+            subcommand: CloudCommands::FilterHelp { options },
+        } => cloud_filter_help_command(options)?,
+
         Commands::Merge { options } => merge_command(options)?,
-        _ => unimplemented!(),
     }
-    // match opts {
-    //     Commands::Cloud {
-    //         subcommand: CloudCommands::Get { options },
-    //     } => cloud_get_command(options)?,
-    //     Commands::Cloud {
-    //         subcommand: CloudCommands::DownloadSource { options },
-    //     } => cloud_download_source_command(options)?,
-    //     Commands::Merge { options } => merge_command(options)?,
-    // }
     Ok(())
 }
