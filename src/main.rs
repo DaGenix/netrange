@@ -58,15 +58,6 @@ pub struct CloudMergeOptions {
     #[structopt(long)]
     pub filter_file: Option<PathBuf>,
 
-    /// Don't use the statically known ranges for the service.
-    ///
-    /// By default, we include some (currently) known ranges when
-    /// trying to minimize the output. If this option is set, we will
-    /// ignore those ranges. This may produce a larger output set but
-    /// may be useful in case out know ranges become incorrect in the future.
-    #[structopt(long)]
-    pub ignore_known_ranges: bool,
-
     /// A minimum ipv4 network size.
     ///
     /// Any ranges smaller that this size are automatically
@@ -113,15 +104,6 @@ pub struct CloudGetMergeOptions {
     /// Path of a file containing a Lua filter program to select the ranges of interest.
     #[structopt(long)]
     pub filter_file: Option<PathBuf>,
-
-    /// Don't use the statically known ranges for the service.
-    ///
-    /// By default, we include some (currently) known ranges when
-    /// trying to minimize the output. If this option is set, we will
-    /// ignore those ranges. This may produce a larger output set but
-    /// may be useful in case out know ranges become incorrect in the future.
-    #[structopt(long)]
-    pub ignore_known_ranges: bool,
 
     /// A minimum ipv4 network size.
     ///
@@ -229,15 +211,6 @@ pub struct MergeOptions {
     /// otherwise appear in the output.
     #[structopt(long)]
     pub extra_file: Vec<PathBuf>,
-
-    /// Don't use the statically known ranges for the service.
-    ///
-    /// By default, we include some (currently) known ranges when
-    /// trying to minimize the output. If this option is set, we will
-    /// ignore those ranges. This may produce a larger output set but
-    /// may be useful in case out know ranges become incorrect in the future.
-    #[structopt(long)]
-    pub ignore_known_ranges: bool,
 
     /// A minimum ipv4 network size.
     ///

@@ -7,18 +7,18 @@ use std::path::PathBuf;
 
 pub fn fetch_and_load_ranges(
     service: &str,
-) -> Result<(Vec<NetworkWithMetadata>, &'static [&'static str]), Error> {
+) -> Result<Vec<NetworkWithMetadata>, Error> {
     let cc = get_cloud_config(service)?;
     let fetch_func = cc.fetch_ranges_func;
     let load_func = cc.load_ranges_func;
     let ranges = load_func(&mut fetch_func()?)?;
-    Ok((ranges, cc.known_ranges))
+    Ok(ranges)
 }
 
 pub fn load_ranges(
     service: &str,
     file: Option<&PathBuf>,
-) -> Result<(Vec<NetworkWithMetadata>, &'static [&'static str]), Error> {
+) -> Result<Vec<NetworkWithMetadata>, Error> {
     let stdin = io::stdin();
     let cc = get_cloud_config(service)?;
     let load_func = cc.load_ranges_func;
@@ -27,5 +27,5 @@ pub fn load_ranges(
     } else {
         load_func(&mut stdin.lock())?
     };
-    Ok((ranges, cc.known_ranges))
+    Ok(ranges)
 }

@@ -16,14 +16,12 @@ pub fn cloud_get_command(options: CloudGetOptions) -> Result<(), Error> {
 }
 
 pub fn cloud_merge_command(options: CloudMergeOptions) -> Result<(), Error> {
-    let (ranges, known_ranges) = load_ranges(&options.service, options.file.as_ref())?;
+    let ranges = load_ranges(&options.service, options.file.as_ref())?;
 
     cloud_process_ranges(
         ranges,
-        known_ranges,
         options.filter,
         options.filter_file,
-        options.ignore_known_ranges,
         options.min_ipv4_network_size,
         options.min_ipv6_network_size,
         true,
@@ -33,14 +31,12 @@ pub fn cloud_merge_command(options: CloudMergeOptions) -> Result<(), Error> {
 }
 
 pub fn cloud_get_merge_command(options: CloudGetMergeOptions) -> Result<(), Error> {
-    let (ranges, known_ranges) = fetch_and_load_ranges(&options.service)?;
+    let ranges = fetch_and_load_ranges(&options.service)?;
 
     cloud_process_ranges(
         ranges,
-        known_ranges,
         options.filter,
         options.filter_file,
-        options.ignore_known_ranges,
         options.min_ipv4_network_size,
         options.min_ipv6_network_size,
         true,
@@ -50,14 +46,12 @@ pub fn cloud_get_merge_command(options: CloudGetMergeOptions) -> Result<(), Erro
 }
 
 pub fn cloud_read_command(options: CloudReadOptions) -> Result<(), Error> {
-    let (ranges, known_ranges) = load_ranges(&options.service, options.file.as_ref())?;
+    let ranges = load_ranges(&options.service, options.file.as_ref())?;
 
     cloud_process_ranges(
         ranges,
-        known_ranges,
         options.filter,
         options.filter_file,
-        true,
         None,
         None,
         false,
@@ -67,14 +61,12 @@ pub fn cloud_read_command(options: CloudReadOptions) -> Result<(), Error> {
 }
 
 pub fn cloud_get_read_command(options: CloudGetReadOptions) -> Result<(), Error> {
-    let (ranges, known_ranges) = fetch_and_load_ranges(&options.service)?;
+    let ranges = fetch_and_load_ranges(&options.service)?;
 
     cloud_process_ranges(
         ranges,
-        known_ranges,
         options.filter,
         options.filter_file,
-        true,
         None,
         None,
         false,
