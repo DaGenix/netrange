@@ -10,7 +10,6 @@ use crate::commands::merge::merge_command;
 use crate::utils::cloud_config::get_cloud_names;
 use anyhow::Error;
 use std::path::PathBuf;
-use structopt::clap::AppSettings;
 use structopt::StructOpt;
 
 /// Download the source file that contains the IP ranges that the service uses.
@@ -262,9 +261,6 @@ enum CloudCommands {
 /// filter, and merge adjacent IP ranges for various cloud
 /// providers.
 #[derive(Debug, StructOpt)]
-#[structopt(global_setting = AppSettings::DeriveDisplayOrder)]
-#[structopt(global_setting = AppSettings::UnifiedHelpMessage)]
-#[structopt(global_setting = AppSettings::VersionlessSubcommands)]
 enum Commands {
     Cloud {
         #[structopt(flatten)]
