@@ -1,15 +1,12 @@
-use crate::sources::{aws, azure, gcp};
 use crate::utils::cloud_config::get_cloud_config;
 use crate::utils::cloud_process_ranges::cloud_process_ranges;
-use crate::utils::filter::NetworkWithMetadata;
 use crate::utils::load_ranges::{fetch_and_load_ranges, load_ranges};
 use crate::{
     CloudFilterHelpOptions, CloudGetMergeOptions, CloudGetOptions, CloudGetReadOptions,
     CloudMergeOptions, CloudReadOptions,
 };
-use anyhow::{bail, Error};
+use anyhow::Error;
 use std::io;
-use std::io::Read;
 
 pub fn cloud_get_command(options: CloudGetOptions) -> Result<(), Error> {
     let func = get_cloud_config(&options.service)?.fetch_ranges_func;

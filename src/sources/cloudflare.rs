@@ -1,9 +1,8 @@
 use crate::utils::filter::NetworkWithMetadata;
-use anyhow::{bail, Error};
+use anyhow::Error;
 use libnetrangemerge::IpRange;
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::convert::TryInto;
 use std::io;
 use std::str::FromStr;
 
