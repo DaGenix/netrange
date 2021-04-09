@@ -67,7 +67,7 @@ of the application not to access any of the ranges past the returned size -
 doing so is safe but will result in a panic.
 
 Both `merge_ranges` and `merge_ranges_slice` operate in place, do not allocate,
-and will not fail or panic, assuming that none of the methods on the [`Range`] type
+and will not fail or panic, assuming that none of the methods on the `Range` type
 panics.
 
 ## Example
