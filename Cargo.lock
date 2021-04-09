@@ -642,6 +642,7 @@ dependencies = [
  "anyhow",
  "cidr",
  "libnetrangemerge",
+ "once_cell",
  "regex",
  "reqwest",
  "rlua",

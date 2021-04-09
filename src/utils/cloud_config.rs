@@ -1,7 +1,9 @@
 use crate::sources::{aws, azure, backblaze, cloudflare, gcp};
 use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::{bail, Error};
+use once_cell::sync::Lazy;
 use std::io::Read;
+use std::ops::Deref;
 
 pub struct CloudConfig {
     service_name: &'static str,
@@ -43,8 +45,10 @@ const CONFIG: &[CloudConfig] = &[
     },
 ];
 
-pub fn get_cloud_names() -> Vec<&'static str> {
-    CONFIG.iter().map(|cc| cc.service_name).collect()
+pub fn get_cloud_names() -> &'static Vec<&'static str> {
+    static INSTANCE: Lazy<Vec<&'static str>> =
+        Lazy::new(|| CONFIG.iter().map(|cc| cc.service_name).collect());
+    INSTANCE.deref()
 }
 
 pub fn get_cloud_config(service: &str) -> Result<&'static CloudConfig, Error> {

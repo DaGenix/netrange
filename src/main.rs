@@ -20,7 +20,7 @@ use structopt::StructOpt;
 #[derive(Debug, StructOpt)]
 pub struct CloudGetOptions {
     /// Cloud provider
-    #[structopt(possible_values = &get_cloud_names())]
+    #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 }
 
@@ -42,7 +42,7 @@ pub struct CloudGetOptions {
 #[derive(Debug, StructOpt)]
 pub struct CloudMergeOptions {
     /// Cloud provider
-    #[structopt(possible_values = &get_cloud_names())]
+    #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 
     /// File to load the ip ranges from. STDIN is used if not
@@ -101,7 +101,7 @@ pub struct CloudMergeOptions {
 #[derive(Debug, StructOpt)]
 pub struct CloudGetMergeOptions {
     /// Cloud provider
-    #[structopt(possible_values = &get_cloud_names())]
+    #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 
     /// Lua filter program to select the ranges of interest.
@@ -154,7 +154,7 @@ pub struct CloudGetMergeOptions {
 #[derive(Debug, StructOpt)]
 pub struct CloudReadOptions {
     /// Cloud provider
-    #[structopt(possible_values = &get_cloud_names())]
+    #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 
     /// File to load the ip ranges from. STDIN is used if not
@@ -188,7 +188,7 @@ pub struct CloudReadOptions {
 #[derive(Debug, StructOpt)]
 pub struct CloudGetReadOptions {
     /// Cloud provider
-    #[structopt(possible_values = &get_cloud_names())]
+    #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 
     /// Lua filter program to select the ranges of interest.
@@ -204,7 +204,7 @@ pub struct CloudGetReadOptions {
 #[derive(Debug, StructOpt)]
 pub struct CloudFilterHelpOptions {
     /// Cloud provider
-    #[structopt(possible_values = &get_cloud_names())]
+    #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 }
 
