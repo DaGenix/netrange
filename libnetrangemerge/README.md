@@ -1,5 +1,4 @@
-libnetrangemerge
-================
+# libnetrangemerge
 
 libnetrangemege implements an algorithm that takes in a list of
 [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing) network
@@ -22,7 +21,7 @@ the particular range, merging those ranges into a smaller set won't be useful.
 However, for applications that treat a list of ranges equivalently, merging
 them into a minimal set can be useful.
 
-# Range Selection
+## Range Selection
 
 Every input CIDR range to libnetrangemerge must be marked with a `selected`
 flag. When two ranges are merged, if either input range is marked as `selected`,
@@ -50,7 +49,7 @@ The `selected` functionality is optional - if an application doesn't
 want to use it, the application can just mark every range as either
 `selected` or not and then not filter anything out of the result.
 
-# Usage
+## Usage
 
 A CIDR range is represented by a struct that implements the `Range` trait.
 3 implementations of that trait are included in the library: `IpRange`,
@@ -71,7 +70,7 @@ Both `merge_ranges` and `merge_ranges_slice` operate in place, do not allocate,
 and will not fail or panic, assuming that none of the methods on the [`Range`] type
 panics.
 
-# Example
+## Example
 
 ```rust
 use libnetrangemerge::{RangeInterest, IpRange, merge_ranges};
@@ -85,14 +84,14 @@ let mut ranges: Vec<RangeInterest<IpRange>> = vec![
 merge_ranges(&mut ranges);
 ```
 
-# no_std Support
+## no_std Support
 
 libnetrangemerge is no_std compatible. However, in no_std mode the `merge_ranges`
 method is unavailable as are the built in range types. The application can implement
 its own type that implements the `Range` trait and pass instances of that
 type to `merge_ranges_slice` for merging.
 
-# Minimum Rust version policy
+## Minimum Rust version policy
 
 libnetrangemerge was developed rustc 1.49 and likely works
 with earlier versions as well.
@@ -100,7 +99,7 @@ with earlier versions as well.
 The minimum supported rustc version may be bumped with minor
 revisions.
 
-# License
+## License
 
 This project is licensed under either of
 
