@@ -1,5 +1,5 @@
 use crate::utils::expand_ranges::expand_ranges;
-use crate::utils::filter::{filter, NetworkWithMetadata};
+use crate::utils::filter_select::{filter_select, RangesWithMetadata};
 use anyhow::Error;
 use libnetrangemerge::merge_ranges;
 use std::fs::File;
@@ -7,23 +7,35 @@ use std::io;
 use std::io::{BufWriter, Read, Write};
 use std::path::PathBuf;
 
+fn get_program(
+    program: Option<String>,
+    program_file: Option<PathBuf>,
+) -> Result<Option<String>, Error> {
+    if let Some(program) = program {
+        Ok(Some(program))
+    } else if let Some(program_file) = program_file {
+        let mut program = String::new();
+        File::open(&program_file)?.read_to_string(&mut program)?;
+        Ok(Some(program))
+    } else {
+        Ok(None)
+    }
+}
+
 pub fn cloud_process_ranges(
-    ranges: Vec<NetworkWithMetadata>,
+    ranges: Vec<RangesWithMetadata>,
     filter_program: Option<String>,
     filter_file: Option<PathBuf>,
+    select_program: Option<String>,
+    select_file: Option<PathBuf>,
     min_ipv4_network_size: Option<u8>,
     min_ipv6_network_size: Option<u8>,
     do_merge: bool,
 ) -> Result<(), Error> {
-    let mut filtered_ranges = if let Some(filter_program) = filter_program {
-        filter(ranges, Some(&filter_program))?
-    } else if let Some(filter_file) = filter_file {
-        let mut filter_program = String::new();
-        File::open(&filter_file)?.read_to_string(&mut filter_program)?;
-        filter(ranges, Some(&filter_program))?
-    } else {
-        filter(ranges, None)?
-    };
+    let filter_program = get_program(filter_program, filter_file)?;
+    let select_program = get_program(select_program, select_file)?;
+    let mut filtered_ranges =
+        filter_select(ranges, filter_program.as_deref(), select_program.as_deref())?;
 
     expand_ranges(
         filtered_ranges.iter_mut().map(|n| n.range_mut()),
@@ -38,7 +50,7 @@ pub fn cloud_process_ranges(
     let stdout = io::stdout();
     let mut stdout = BufWriter::new(stdout.lock());
     for network in filtered_ranges {
-        if network.is_interesting() {
+        if network.is_selected() {
             writeln!(stdout, "{}", network.range())?;
         }
     }

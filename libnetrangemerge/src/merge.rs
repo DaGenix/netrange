@@ -71,7 +71,7 @@ fn try_merge_overlapping<R: Range>(
     if range1.range().contains(&range2.range()) {
         Some(RangeInterest::new(
             range1.range().clone(),
-            range1.is_interesting() || range2.is_interesting(),
+            range1.is_selected() || range2.is_selected(),
         ))
     } else {
         None
@@ -118,7 +118,7 @@ fn try_merge_adjacent<R: Range>(
     if bigger_range.contains(&range2.range()) {
         Some(RangeInterest::new(
             bigger_range,
-            range1.is_interesting() || range2.is_interesting(),
+            range1.is_selected() || range2.is_selected(),
         ))
     } else {
         None

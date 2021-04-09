@@ -1,12 +1,12 @@
 use crate::sources::{aws, azure, cloudflare, gcp};
-use crate::utils::filter::NetworkWithMetadata;
+use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::{bail, Error};
 use std::io::Read;
 
 pub struct CloudConfig {
     service_name: &'static str,
     pub fetch_ranges_func: fn() -> Result<reqwest::blocking::Response, Error>,
-    pub load_ranges_func: fn(&mut dyn Read) -> Result<Vec<NetworkWithMetadata>, Error>,
+    pub load_ranges_func: fn(&mut dyn Read) -> Result<Vec<RangesWithMetadata>, Error>,
     pub filter_help: &'static str,
 }
 

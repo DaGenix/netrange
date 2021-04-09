@@ -1,13 +1,11 @@
 use crate::utils::cloud_config::get_cloud_config;
-use crate::utils::filter::NetworkWithMetadata;
+use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::Error;
 use std::fs::File;
 use std::io;
 use std::path::PathBuf;
 
-pub fn fetch_and_load_ranges(
-    service: &str,
-) -> Result<Vec<NetworkWithMetadata>, Error> {
+pub fn fetch_and_load_ranges(service: &str) -> Result<Vec<RangesWithMetadata>, Error> {
     let cc = get_cloud_config(service)?;
     let fetch_func = cc.fetch_ranges_func;
     let load_func = cc.load_ranges_func;
@@ -18,7 +16,7 @@ pub fn fetch_and_load_ranges(
 pub fn load_ranges(
     service: &str,
     file: Option<&PathBuf>,
-) -> Result<Vec<NetworkWithMetadata>, Error> {
+) -> Result<Vec<RangesWithMetadata>, Error> {
     let stdin = io::stdin();
     let cc = get_cloud_config(service)?;
     let load_func = cc.load_ranges_func;

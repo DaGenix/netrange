@@ -1,4 +1,4 @@
-use crate::utils::filter::NetworkWithMetadata;
+use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::{bail, Error};
 use libnetrangemerge::IpRange;
 use serde::Deserialize;
@@ -61,7 +61,7 @@ pub fn fetch_ranges() -> Result<reqwest::blocking::Response, Error> {
 }
 
 #[allow(non_snake_case)]
-pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<NetworkWithMetadata>, Error> {
+pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<RangesWithMetadata>, Error> {
     let mut data = String::new();
     reader.read_to_string(&mut data)?;
     let ranges: AzureRanges = serde_json::from_str(&data)?;
@@ -101,7 +101,7 @@ pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<NetworkWithMetadata>
                 })
                 .collect::<Result<Vec<IpRange>, Error>>()?;
 
-            Ok(NetworkWithMetadata::new(metadata, ranges))
+            Ok(RangesWithMetadata::new(metadata, ranges))
         })
         .collect()
 }

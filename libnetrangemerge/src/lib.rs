@@ -13,10 +13,10 @@
 //! them by just throwing them all away. However, if you care about 1 or more of them,
 //! you can minimize the list by merging them to the range 127.0.0.0/22. libnetrangemerge
 //! supports this concept by allowing each input range to be tagged with a boolean
-//! to indicate interest. After merging, any range that was created from at least
-//! one range with the interest flag set to true will also have its interest flag
+//! to indicate if the range is selected. After merging, any range that was created from at least
+//! one range with the selected flag set to true will also have its selected flag
 //! set to true. The caller is then able to filter out ranges that it doesn't care
-//! about in the results. Tagging input ranges with an interest flag produces smaller
+//! about in the results. Tagging input ranges with an selected flag produces smaller
 //! output lists than removing uninteresting ranges before merging - imagine that any of
 //! the 4 ranges above were missing - in that case our output would always have to
 //! contain two ranges - a /24 and a /23 instead of just the /22.

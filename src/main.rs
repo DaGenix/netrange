@@ -53,9 +53,17 @@ pub struct CloudMergeOptions {
     #[structopt(long, conflicts_with = "filter-file")]
     pub filter: Option<String>,
 
-    /// Path of a file containing a Lua filter program to select the ranges of interest.
+    /// Path of a file containing a Lua program to select the ranges of interest.
     #[structopt(long)]
     pub filter_file: Option<PathBuf>,
+
+    /// Lua filter program to filter the ranges of interest.
+    #[structopt(long, conflicts_with = "select-file")]
+    pub select: Option<String>,
+
+    /// Path of a file containing a Lua program to filter the ranges of interest.
+    #[structopt(long)]
+    pub select_file: Option<PathBuf>,
 
     /// A minimum ipv4 network size.
     ///
@@ -100,9 +108,17 @@ pub struct CloudGetMergeOptions {
     #[structopt(long, conflicts_with = "filter-file")]
     pub filter: Option<String>,
 
-    /// Path of a file containing a Lua filter program to select the ranges of interest.
+    /// Path of a file containing a Lua program to select the ranges of interest.
     #[structopt(long)]
     pub filter_file: Option<PathBuf>,
+
+    /// Lua filter program to filter the ranges of interest.
+    #[structopt(long, conflicts_with = "select-file")]
+    pub select: Option<String>,
+
+    /// Path of a file containing a Lua program to filter the ranges of interest.
+    #[structopt(long)]
+    pub select_file: Option<PathBuf>,
 
     /// A minimum ipv4 network size.
     ///

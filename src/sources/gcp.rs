@@ -1,4 +1,4 @@
-use crate::utils::filter::NetworkWithMetadata;
+use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::{bail, Error};
 use libnetrangemerge::IpRange;
 use serde::Deserialize;
@@ -38,7 +38,7 @@ pub fn fetch_ranges() -> Result<reqwest::blocking::Response, Error> {
     )
 }
 
-pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<NetworkWithMetadata>, Error> {
+pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<RangesWithMetadata>, Error> {
     let mut data = String::new();
     reader.read_to_string(&mut data)?;
     let ranges: GcpRanges = serde_json::from_str(&data)?;
@@ -57,7 +57,7 @@ pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<NetworkWithMetadata>
             } else {
                 bail!("No ipv4 or ipv6 prefix found in element.")
             };
-            Ok(NetworkWithMetadata::new(metadata, ranges))
+            Ok(RangesWithMetadata::new(metadata, ranges))
         })
         .collect()
 }

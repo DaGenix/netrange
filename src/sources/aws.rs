@@ -1,4 +1,4 @@
-use crate::utils::filter::NetworkWithMetadata;
+use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::Error;
 use libnetrangemerge::IpRange;
 use serde::Deserialize;
@@ -47,7 +47,7 @@ pub fn fetch_ranges() -> Result<reqwest::blocking::Response, Error> {
     )
 }
 
-pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<NetworkWithMetadata>, Error> {
+pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<RangesWithMetadata>, Error> {
     let mut data = String::new();
     reader.read_to_string(&mut data)?;
     let ranges: AwsRanges = serde_json::from_str(&data)?;
@@ -59,7 +59,7 @@ pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<NetworkWithMetadata>
 
         let ranges = vec![IpRange::from_str(&range.ip_prefix)?];
 
-        Ok(NetworkWithMetadata::new(metadata, ranges))
+        Ok(RangesWithMetadata::new(metadata, ranges))
     });
     let ipv6_ranges = ranges.ipv6_prefixes.into_iter().map(|range| {
         let mut metadata = HashMap::new();
@@ -69,7 +69,7 @@ pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<NetworkWithMetadata>
 
         let ranges = vec![IpRange::from_str(&range.ipv6_prefix)?];
 
-        Ok(NetworkWithMetadata::new(metadata, ranges))
+        Ok(RangesWithMetadata::new(metadata, ranges))
     });
     ipv4_ranges.chain(ipv6_ranges).collect()
 }

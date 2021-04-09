@@ -5,7 +5,7 @@ enum State<R>
 where
     R: Range,
 {
-    Normal { range: R, interesting: bool },
+    Normal { range: R, selected: bool },
     Dummy,
 }
 
@@ -19,8 +19,8 @@ where
 
 /// A `RangeInterest` represents a network range object (some type
 /// that implements [`Range](crate::Range) and a boolean flag
-/// that indicates if the range is interesting to the user - where
-/// interesting is a user defined concept.
+/// that indicates if the range is selected by the user - where
+/// selected is a user defined concept.
 ///
 /// # Panics
 ///
@@ -32,10 +32,10 @@ where
 /// will `panic!()`
 impl<R: Range> RangeInterest<R> {
     /// Create a new `RangeInterest` with the given `range` value and
-    /// `interesting` flag.
-    pub fn new(range: R, interesting: bool) -> RangeInterest<R> {
+    /// `selected` flag.
+    pub fn new(range: R, selected: bool) -> RangeInterest<R> {
         RangeInterest {
-            state: State::Normal { range, interesting },
+            state: State::Normal { range, selected },
         }
     }
 
@@ -55,20 +55,18 @@ impl<R: Range> RangeInterest<R> {
         }
     }
 
-    /// Return the value of the `interesting` flag.
-    pub fn is_interesting(&self) -> bool {
+    /// Return the value of the `selected` flag.
+    pub fn is_selected(&self) -> bool {
         match &self.state {
-            State::Normal { interesting, .. } => *interesting,
+            State::Normal { selected, .. } => *selected,
             State::Dummy => panic!("RangeInterest is invalid"),
         }
     }
 
-    /// Return the value of the `interesting` flag.
-    pub fn set_interesting(&mut self, intersting: bool) {
+    /// Return the value of the `selected` flag.
+    pub fn set_selected(&mut self, selected: bool) {
         match &mut self.state {
-            State::Normal {
-                interesting: int, ..
-            } => *int = intersting,
+            State::Normal { selected: int, .. } => *int = selected,
             State::Dummy => panic!("RangeInterest is invalid"),
         }
     }
