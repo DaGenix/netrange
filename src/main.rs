@@ -7,12 +7,11 @@ use crate::commands::cloud::{
     cloud_merge_command, cloud_read_command,
 };
 use crate::commands::merge::merge_command;
+use crate::utils::cloud_config::get_cloud_names;
 use anyhow::Error;
 use std::path::PathBuf;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
-
-const CLOUD_SERVICE_NAMES: &'static [&'static str] = &["aws", "azure", "gcp"];
 
 /// Download the source file that contains the IP ranges that the service uses.
 ///
@@ -22,7 +21,7 @@ const CLOUD_SERVICE_NAMES: &'static [&'static str] = &["aws", "azure", "gcp"];
 #[derive(Debug, StructOpt)]
 pub struct CloudGetOptions {
     /// Cloud provider
-    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
+    #[structopt(possible_values = &get_cloud_names())]
     pub service: String,
 }
 
@@ -44,7 +43,7 @@ pub struct CloudGetOptions {
 #[derive(Debug, StructOpt)]
 pub struct CloudMergeOptions {
     /// Cloud provider
-    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
+    #[structopt(possible_values = &get_cloud_names())]
     pub service: String,
 
     /// File to load the ip ranges from. STDIN is used if not
@@ -104,7 +103,7 @@ pub struct CloudMergeOptions {
 #[derive(Debug, StructOpt)]
 pub struct CloudGetMergeOptions {
     /// Cloud provider
-    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
+    #[structopt(possible_values = &get_cloud_names())]
     pub service: String,
 
     /// Lua filter program to select the ranges of interest.
@@ -158,7 +157,7 @@ pub struct CloudGetMergeOptions {
 #[derive(Debug, StructOpt)]
 pub struct CloudReadOptions {
     /// Cloud provider
-    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
+    #[structopt(possible_values = &get_cloud_names())]
     pub service: String,
 
     /// File to load the ip ranges from. STDIN is used if not
@@ -192,7 +191,7 @@ pub struct CloudReadOptions {
 #[derive(Debug, StructOpt)]
 pub struct CloudGetReadOptions {
     /// Cloud provider
-    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
+    #[structopt(possible_values = &get_cloud_names())]
     pub service: String,
 
     /// Lua filter program to select the ranges of interest.
@@ -208,7 +207,7 @@ pub struct CloudGetReadOptions {
 #[derive(Debug, StructOpt)]
 pub struct CloudFilterHelpOptions {
     /// Cloud provider
-    #[structopt(possible_values = CLOUD_SERVICE_NAMES)]
+    #[structopt(possible_values = &get_cloud_names())]
     pub service: String,
 }
 

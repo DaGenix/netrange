@@ -1,5 +1,7 @@
 use crate::sources::{aws, azure, gcp};
+use crate::utils::cloud_config::get_cloud_config;
 use crate::utils::cloud_process_ranges::cloud_process_ranges;
+use crate::utils::filter::NetworkWithMetadata;
 use crate::utils::load_ranges::{fetch_and_load_ranges, load_ranges};
 use crate::{
     CloudFilterHelpOptions, CloudGetMergeOptions, CloudGetOptions, CloudGetReadOptions,
@@ -7,17 +9,12 @@ use crate::{
 };
 use anyhow::{bail, Error};
 use std::io;
+use std::io::Read;
 
 pub fn cloud_get_command(options: CloudGetOptions) -> Result<(), Error> {
-    let mut response = match options.service.as_str() {
-        "aws" => aws::fetch_ranges()?,
-        "azure" => azure::fetch_ranges()?,
-        "gcp" => gcp::fetch_ranges()?,
-        x => bail!("Invalid service: {}", x),
-    };
-
+    let func = get_cloud_config(&options.service)?.fetch_ranges_func;
+    let mut response = func()?;
     io::copy(&mut response, &mut io::stdout().lock())?;
-
     Ok(())
 }
 
@@ -90,12 +87,6 @@ pub fn cloud_get_read_command(options: CloudGetReadOptions) -> Result<(), Error>
 }
 
 pub fn cloud_filter_help_command(options: CloudFilterHelpOptions) -> Result<(), Error> {
-    let message = match options.service.as_str() {
-        "aws" => aws::FILTER_HELP,
-        "azure" => azure::FILTER_HELP,
-        "gcp" => gcp::FILTER_HELP,
-        x => bail!("Invalid service: {}", x),
-    };
-    println!("{}", message);
+    println!("{}", get_cloud_config(&options.service)?.filter_help);
     Ok(())
 }

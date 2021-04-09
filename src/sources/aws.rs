@@ -89,7 +89,7 @@ pub fn fetch_ranges() -> Result<reqwest::blocking::Response, Error> {
     )
 }
 
-pub fn load_ranges<R: io::Read>(reader: &mut R) -> Result<Vec<NetworkWithMetadata>, Error> {
+pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<NetworkWithMetadata>, Error> {
     let mut data = String::new();
     reader.read_to_string(&mut data)?;
     let ranges: AwsRanges = serde_json::from_str(&data)?;
