@@ -92,7 +92,7 @@ method is unavailable as are the built in range types. The application can imple
 its own type that implements the `Range` trait and pass instances of that
 type to `merge_ranges_slice` for merging.
 
-### Minimum Rust version policy
+# Minimum Rust version policy
 
 libnetrangemerge was developed rustc 1.49 and likely works
 with earlier versions as well.
@@ -100,7 +100,7 @@ with earlier versions as well.
 The minimum supported rustc version may be bumped with minor
 revisions.
 
-### License
+# License
 
 This project is licensed under either of
 
