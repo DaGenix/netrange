@@ -127,7 +127,7 @@ impl Display for RangeParseError {
 impl Error for RangeParseError {}
 
 /// An `IpRange` represents a network range that may be either
-/// an ipv4 or an ipv6 range. If you are only working with
+/// an ipv4 or an ipv6 range. If an application is only working with
 /// ipv4 addresses, it may be better to use [`Ipv4Range`] instead
 /// as that type is smaller and thus performance somewhat better.
 ///
@@ -290,7 +290,7 @@ pub struct Ipv4Range {
 }
 
 impl Ipv4Range {
-    /// Create a new `IpRange` value.
+    /// Create a new `Ipv4Range` value.
     pub fn new(host_address: Ipv4Addr, prefix_length: u8) -> Result<Ipv4Range, InvalidRangeError> {
         if prefix_length > 32 {
             return Err(InvalidRangeError::InvalidPrefixLength(
@@ -413,7 +413,7 @@ pub struct Ipv6Range {
 }
 
 impl Ipv6Range {
-    /// Create a new `IpRange` value.
+    /// Create a new `Ipv6Range` value.
     pub fn new(host_address: Ipv6Addr, prefix_length: u8) -> Result<Ipv6Range, InvalidRangeError> {
         if prefix_length > 128 {
             return Err(InvalidRangeError::InvalidPrefixLength(

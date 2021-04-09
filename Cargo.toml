@@ -1,13 +1,13 @@
 [package]
-name = "netrangemerge"
+name = "netrange"
 version = "0.1.0"
 authors = ["Palmer Cox <p@lmercox.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/DaGenix/netrangemerge"
-documentation = "https://github.com/DaGenix/netrangemerge"
-homepage = "https://github.com/DaGenix/netrangemerge"
+repository = "https://github.com/DaGenix/netrange"
+documentation = "https://github.com/DaGenix/netrange"
+homepage = "https://github.com/DaGenix/netrange"
 description = """
 A simple CLI utility to retrieve, filter, and merge adjacent
 IP ranges for various cloud providers.

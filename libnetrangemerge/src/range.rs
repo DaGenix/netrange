@@ -2,10 +2,11 @@
 /// [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)
 /// range.
 ///
-/// You generally can just use the built in types that implement
+/// Applications generally can use the built in types that implement
 /// `Range` in this library: [`IpRange`](crate::IpRange), [`Ipv4Range`](crate::Ipv4Range),
 /// and [`Ipv6Range`](crate::Ipv6Range). However, those types are not available in
-/// no_std mode which is a case where it may be necessary to implement this trait by the user.
+/// no_std mode - in which case the application can implement its own type that
+/// implements this trait.
 pub trait Range: Clone + Sized {
     type Address: Clone + Ord;
 
@@ -35,7 +36,8 @@ pub trait Range: Clone + Sized {
     /// return the value `24`.
     fn prefix_length(&self) -> u8;
 
-    /// Return `true` if this is an ipv6 range and `false` otherwise.
+    /// Return `true` if this is an ipv6 range and `false` if
+    /// it is an ipv4 range.
     fn is_ipv6(&self) -> bool;
 
     /// Return `true` if this range contains the other range and

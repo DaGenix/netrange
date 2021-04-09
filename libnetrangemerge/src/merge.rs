@@ -181,7 +181,7 @@ fn merge_ranges_in_place<R: Range>(ranges: &mut [RangeInterest<R>]) {
 ///
 /// As this operation is performed in place, after the operation is complete
 /// some number of ranges at the end of the input slice may no longer be
-/// valid. Attempting to access them in any way will panic!().
+/// valid. Attempting to access them in any way may panic.
 ///
 /// This function does not allocate and is no_std compatible.
 ///
