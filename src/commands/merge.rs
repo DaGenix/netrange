@@ -2,9 +2,9 @@ use crate::utils::expand_ranges::expand_ranges;
 use crate::utils::load_ranges::read_single_line_ranges;
 use crate::MergeOptions;
 use anyhow::Error;
-use libnetrangemerge::{merge_ranges, IpRange, RangeInterest};
+use libnetrangemerge::merge_ranges;
 use std::fs::File;
-use std::io::{self, BufRead, Write as _};
+use std::io::{self, Write as _};
 
 pub fn merge_command(options: MergeOptions) -> Result<(), Error> {
     let mut ranges = Vec::new();

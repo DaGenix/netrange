@@ -3,7 +3,7 @@ use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::Error;
 use libnetrangemerge::{IpRange, RangeInterest};
 use std::fs::File;
-use std::io::{self, BufRead, Write as _};
+use std::io::{self, BufRead};
 use std::path::PathBuf;
 
 /// Download ranges from the internet for the named
