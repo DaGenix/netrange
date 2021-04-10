@@ -5,7 +5,9 @@ IP ranges used by common cloud services, filter those lists
 by attributes provided by the cloud providers, and then
 optionally minimize the set of resulting ranges.
 
-For example:
+[![Crates.io](https://img.shields.io/crates/v/netrange.svg)](https://crates.io/crates/netrange)
+
+An example:
 
 ```sh
 netrange cloud get-merge aws --filter "return service == 'EC2' and region == 'us-east-1'"
@@ -18,7 +20,11 @@ any adjacent IP ranges.
 
 ## Installation
 
-TODO
+[Download and install Rust](https://www.rust-lang.org/learn/get-started). Then, run:
+
+```sh
+cargo install netrange
+```
 
 ## Merging and Reading
 
