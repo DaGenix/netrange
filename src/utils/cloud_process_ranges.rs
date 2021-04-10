@@ -1,5 +1,6 @@
 use crate::utils::expand_ranges::expand_ranges;
 use crate::utils::filter_select::{filter_select, RangesWithMetadata};
+use crate::utils::load_ranges::read_single_line_ranges;
 use anyhow::Error;
 use libnetrangemerge::merge_ranges;
 use std::fs::File;
@@ -28,6 +29,7 @@ pub fn cloud_process_ranges(
     filter_file: Option<PathBuf>,
     select_program: Option<String>,
     select_file: Option<PathBuf>,
+    extra_ranges_files: Vec<PathBuf>,
     min_ipv4_network_size: Option<u8>,
     min_ipv6_network_size: Option<u8>,
     do_merge: bool,
@@ -42,6 +44,14 @@ pub fn cloud_process_ranges(
         min_ipv4_network_size,
         min_ipv6_network_size,
     );
+
+    for extra_ranges_file in extra_ranges_files {
+        read_single_line_ranges(
+            &mut File::open(&extra_ranges_file)?,
+            &mut filtered_ranges,
+            false,
+        )?;
+    }
 
     if do_merge {
         merge_ranges(&mut filtered_ranges);

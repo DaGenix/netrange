@@ -14,34 +14,36 @@ use structopt::StructOpt;
 
 /// Download the source file that contains the IP ranges that the service uses.
 ///
-/// All currently supported cloud services use a JSON formatted file to provide
-/// the IP ranges that they use. However, other services supported in the future
-/// may use another format.
+/// Many, but not all, cloud services use a JSON formatted file to provide
+/// the IP ranges that they use.
 #[derive(Debug, StructOpt)]
 pub struct CloudGetOptions {
-    /// Cloud provider
+    /// Cloud service
     #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 }
 
-/// Load IP ranges for the given service and then try to minimize the set.
+/// Load IP ranges for the service, merge adjacent ranges, and output to STDOUT.
 ///
-/// By default, all ranges are represented in the output - although,
-/// the number of ranges will hopefully be smaller than the total number
-/// in the source due to merging adjacent ranges. If you are interested
-/// in only a certain set of ranges, you can filter the source ranges
-/// using a LUA script which returns `true` for ranges that you care
-/// about and `false` for ranges that you do not.
+/// The ranges loaded may be filtered to limit those that are output
+/// by attributes provided by the service (eg, "region" for AWS). After
+/// filtering, remaining ranges may be selected using those same attributes.
+/// Ranges marked as selected will always appear in the output set,
+/// while unselected ranges are used to help minimize the output set and
+/// may not appear in the output if they do not help minimize it.
+///
+/// Both selecting and filtering are done with LUA programs that should
+/// return either a True or False result for each set of attributes.
 /// You may use the "cloud filter-help <service>" command to see what
 /// filtering parameters are available by service.
 ///
-/// This command requires that the source IP ranges already have been
+/// This subcommand requires that the source IP ranges already have been
 /// downloaded such as with the "cloud get <service>" command. You may
 /// download and merge in just a single command by using the
 /// "cloud get-merge <service>" command instead.
 #[derive(Debug, StructOpt)]
 pub struct CloudMergeOptions {
-    /// Cloud provider
+    /// Cloud service
     #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 
@@ -49,21 +51,30 @@ pub struct CloudMergeOptions {
     /// specified.
     pub file: Option<PathBuf>,
 
-    /// Lua filter program to select the ranges of interest.
+    /// Lua filter program to filter the ranges of interest.
     #[structopt(long, conflicts_with = "filter-file")]
     pub filter: Option<String>,
 
-    /// Path of a file containing a Lua program to select the ranges of interest.
+    /// Path of a file containing a Lua program to filter the ranges of interest.
     #[structopt(long)]
     pub filter_file: Option<PathBuf>,
 
-    /// Lua filter program to filter the ranges of interest.
+    /// Lua filter program to select the ranges of interest.
     #[structopt(long, conflicts_with = "select-file")]
     pub select: Option<String>,
 
-    /// Path of a file containing a Lua program to filter the ranges of interest.
+    /// Path of a file containing a Lua program to select the ranges of interest.
     #[structopt(long)]
     pub select_file: Option<PathBuf>,
+
+    /// Extra ranges that may be helpful to minimize the set
+    ///
+    /// A file containing extra ranges to merge with the main set.
+    /// The file should contain a single CIDR range per line.
+    /// These ranges will be used to minimize the main set in the same way
+    /// that non-selected ranges are.
+    #[structopt(name = "extra-ranges-file", long)]
+    pub extra_ranges_files: Vec<PathBuf>,
 
     /// A minimum ipv4 network size.
     ///
@@ -82,14 +93,17 @@ pub struct CloudMergeOptions {
     pub min_ipv6_network_size: Option<u8>,
 }
 
-/// Download IP ranges for the given service and then try to minimize the set.
+/// download ip ranges for the given service and then try to minimize the set.
 ///
-/// By default, all ranges are represented in the output - although,
-/// the number of ranges will hopefully be smaller than the total number
-/// in the source due to merging adjacent ranges. If you are interested
-/// in only a certain set of ranges, you can filter the source ranges
-/// using a LUA script which returns `true` for ranges that you care
-/// about and `false` for ranges that you do not.
+/// the ranges loaded may be filtered to limit those that are output
+/// by attributes provided by the service (eg, "region" for aws). after
+/// filtering, remaining ranges may be selected using those same attributes.
+/// ranges marked as selected will always appear in the output set,
+/// while unselected ranges are used to help minimize the output set and
+/// may not appear in the output if they do not help minimize it.
+///
+/// both selecting and filtering are done with lua programs that should
+/// return either a true or false result for each set of attributes.
 /// You may use the "cloud filter-help <service>" command to see what
 /// filtering parameters are available by service.
 ///
@@ -100,25 +114,34 @@ pub struct CloudMergeOptions {
 /// the already downloaded file.
 #[derive(Debug, StructOpt)]
 pub struct CloudGetMergeOptions {
-    /// Cloud provider
+    /// Cloud service
     #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 
-    /// Lua filter program to select the ranges of interest.
+    /// Lua filter program to filter the ranges of interest.
     #[structopt(long, conflicts_with = "filter-file")]
     pub filter: Option<String>,
 
-    /// Path of a file containing a Lua program to select the ranges of interest.
+    /// Path of a file containing a Lua program to filter the ranges of interest.
     #[structopt(long)]
     pub filter_file: Option<PathBuf>,
 
-    /// Lua filter program to filter the ranges of interest.
+    /// Lua filter program to select the ranges of interest.
     #[structopt(long, conflicts_with = "select-file")]
     pub select: Option<String>,
 
-    /// Path of a file containing a Lua program to filter the ranges of interest.
+    /// Path of a file containing a Lua program to select the ranges of interest.
     #[structopt(long)]
     pub select_file: Option<PathBuf>,
+
+    /// Extra ranges that may be helpful to minimize the set
+    ///
+    /// A file containing extra ranges to merge with the main set.
+    /// The file should contain a single CIDR range per line.
+    /// These ranges will be used to minimize the main set in the same way
+    /// that non-selected ranges are.
+    #[structopt(name = "extra-ranges-file", long)]
+    pub extra_ranges_files: Vec<PathBuf>,
 
     /// A minimum ipv4 network size.
     ///
@@ -139,13 +162,11 @@ pub struct CloudGetMergeOptions {
 
 /// Load IP ranges for the given service and print them out
 ///
-/// By default, all ranges are represented in the output. Unlike in
-/// the "cloud merge" command, adjacent ranges are not merged. If you are interested
-/// in only a certain set of ranges, you can filter the source ranges
-/// using a LUA script which returns `true` for ranges that you care
-/// about and `false` for ranges that you do not.
-/// You may use the "cloud filter-help <service>" command to see what
-/// filtering parameters are available by service.
+/// The ranges loaded may be filtered to limit those that are output
+/// by attributes provided by the service (eg, "region" for AWS) using
+/// a LUA program that should return either a True or False result
+/// for each set of attributes. You may use the "cloud filter-help <service>"
+/// command to see what filtering parameters are available by service.
 ///
 /// This command requires that the source IP ranges already have been
 /// downloaded such as with the "cloud get <service>" command. You may
@@ -153,7 +174,7 @@ pub struct CloudGetMergeOptions {
 /// "cloud get-read <service>" command instead.
 #[derive(Debug, StructOpt)]
 pub struct CloudReadOptions {
-    /// Cloud provider
+    /// Cloud service
     #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 
@@ -172,13 +193,11 @@ pub struct CloudReadOptions {
 
 /// Load IP ranges for the given service and print them out
 ///
-/// By default, all ranges are represented in the output. Unlike in
-/// the "cloud merge" command, adjacent ranges are not merged. If you are interested
-/// in only a certain set of ranges, you can filter the source ranges
-/// using a LUA script which returns `true` for ranges that you care
-/// about and `false` for ranges that you do not.
-/// You may use the "cloud filter-help <service>" command to see what
-/// filtering parameters are available by service.
+/// The ranges loaded may be filtered to limit those that are output
+/// by attributes provided by the service (eg, "region" for AWS) using
+/// a LUA program that should return either a True or False result
+/// for each set of attributes. You may use the "cloud filter-help <service>"
+/// command to see what filtering parameters are available by service.
 ///
 /// This command will re-download the source IP ranges every time it is
 /// invoked. This can be inefficient if you invoke this command multiple
@@ -187,7 +206,7 @@ pub struct CloudReadOptions {
 /// the already downloaded file.
 #[derive(Debug, StructOpt)]
 pub struct CloudGetReadOptions {
-    /// Cloud provider
+    /// Cloud service
     #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 
@@ -203,7 +222,7 @@ pub struct CloudGetReadOptions {
 /// Print information about parameters available to filter ranges
 #[derive(Debug, StructOpt)]
 pub struct CloudFilterHelpOptions {
-    /// Cloud provider
+    /// Cloud service
     #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 }
@@ -222,10 +241,11 @@ pub struct MergeOptions {
     /// Extra ranges that may be helpful to minimize the set
     ///
     /// A file containing extra ranges to merge with the main set.
-    /// These ranges will be used to minimize the main set - but will not
-    /// otherwise appear in the output.
-    #[structopt(long)]
-    pub extra_file: Vec<PathBuf>,
+    /// The file should contain a single CIDR range per line.
+    /// These ranges will be used to minimize the main set in the same way
+    /// that non-selected ranges are with the "cloud merge" subcommand.
+    #[structopt(name = "extra-ranges-file", long)]
+    pub extra_ranges_files: Vec<PathBuf>,
 
     /// A minimum ipv4 network size.
     ///
@@ -275,7 +295,7 @@ enum CloudCommands {
 
 /// netrangemerge provides a command line interface to retrieve,
 /// filter, and merge adjacent IP ranges for various cloud
-/// providers.
+/// services.
 #[derive(Debug, StructOpt)]
 enum Commands {
     Cloud {

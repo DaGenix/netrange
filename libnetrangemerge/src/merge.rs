@@ -1,3 +1,53 @@
+// Algorithm:
+//
+// The algorithm works in place and in two phases. In both phases,
+// we process IPV4 and IPV6 addresses separately - which we accomplish
+// by moving all IPV4 addresses to the front of the slice and all IPV6
+// addresses to the end.
+//
+// The first phase is where we look to eliminate duplicate and overlapping
+// ranges. We accomplish this by sorting all of the ranges starting with
+// the lowest first address in the range and when two ranges have the same
+// first address, with the larger range coming first. In order for a range
+// to fully cover a second one, its first address must be less than or equal
+// to the second range and it must be at least as large - which happens to
+// mean that with the order that we have sorted the ranges in, we can just
+// work our way from the front of the slice to the end checking to see if
+// each range covers the next range in the slice - and merging them if they do.
+//
+// The second phase is where we look to merge adjacent ranges. The first phase
+// removed all overlapping and duplicate ranges - so, at this point, we know
+// that every range represents a unique set of addresses. Now, we re-sort
+// the slice to have the smaller ranges first - and within ranges of the same
+// size to have smaller addresses first. We order everything this way because
+// we're going to work our way up the list of ranges: eg, first we try merging
+// all of the /32s in order to create /31s; then, we try merging all of the /31s
+// to create /30s, etc. An example of how this works is below. A "D" indicates a
+// dummy range which is left over when two ranges are merged.
+//
+// First, we start with these 6 input ranges:
+//
+// 0  |  1  |  2  |  3  |  4  |  5
+// /32 | /32 | /32 | /32 | /31 | /31
+//
+// Then, we merge all of the /32s that we can:
+//
+// 0  |  1  |  2  |  3  |  4  |  5
+// D  | /31 | /32 | /32 | /31 | /31
+//
+// Next, we re-sort the part of the slice that had the /32s:
+//
+// 0  |  1  |  2  |  3  |  4  |  5
+// D  | /32 | /32 | /31 | /31 | /31
+//
+// Notice that this moves the /31 at position 1 to position
+// 3 where it is now adjacent to the other /31s - but may
+// not be in the right order. So, after this step, we resort
+// all of the /31s again.
+//
+// We then processes all of the /31s - and then the /30s, /29s, etc.
+// until every range has been processed.
+
 use crate::{Range, RangeInterest};
 use core::cmp::Ordering;
 
@@ -11,9 +61,12 @@ fn dummies_first<R: Range>(a: &RangeInterest<R>, b: &RangeInterest<R>) -> Option
 }
 
 // This sort arranges things first by address type and then
-// puts everything in the propper order to find and remove
+// puts everything in the proper order to find and remove
 // overlapping ranges.
+//
 // ASSUMES: No dummy ranges
+//
+// Order:
 // IPV4 then IPV6
 // Smaller addresses to bigger addresses
 // Bigger ranges to smaller ranges
@@ -28,7 +81,10 @@ fn sort_before_merging<R: Range>(a: &RangeInterest<R>, b: &RangeInterest<R>) -> 
 
 // This sort is run after all of the ranges of the same size
 // are merged to prepare for merging ranges of the next size.
+//
 // ASSUMES: Everything has the same family
+//
+// Order:
 // Dummies first
 // Smaller ranges to bigger ranges
 // Smaller addresses to bigger addresses

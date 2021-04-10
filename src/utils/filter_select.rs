@@ -1,4 +1,4 @@
-use anyhow::Error;
+use anyhow::{bail, Error};
 use libnetrangemerge::{IpRange, Range as _, RangeInterest};
 use std::collections::HashMap;
 
@@ -77,14 +77,24 @@ pub fn filter_select(
                 ctx.globals().set("is_ipv4", !range.is_ipv6())?;
                 ctx.globals().set("is_ipv6", range.is_ipv6())?;
 
-                let filter_func: rlua::Function<'_> = ctx.globals().get("__filter_func")?;
-                if !filter_func.call(())? {
-                    return Ok(None);
+                match ctx.globals().get("__filter_func")? {
+                    rlua::Value::Function(filter_func) => {
+                        if !filter_func.call(())? {
+                            return Ok(None);
+                        }
+                    }
+                    rlua::Nil => {}
+                    _ => bail!("Unexpected value for __filter_func"),
                 }
 
-                let select_func: rlua::Function<'_> = ctx.globals().get("__select_func")?;
-                let selected = select_func.call(())?;
-                Ok(Some(selected))
+                match ctx.globals().get("__select_func")? {
+                    rlua::Value::Function(select_func) => {
+                        let selected = select_func.call(())?;
+                        Ok(Some(selected))
+                    }
+                    rlua::Nil => Ok(Some(true)),
+                    _ => bail!("Unexpected value for __select_func"),
+                }
             })?;
             if let Some(selected) = selected {
                 output_ranges.push(RangeInterest::new(range, selected))

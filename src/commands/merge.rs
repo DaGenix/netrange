@@ -1,34 +1,21 @@
 use crate::utils::expand_ranges::expand_ranges;
+use crate::utils::load_ranges::read_single_line_ranges;
 use crate::MergeOptions;
 use anyhow::Error;
 use libnetrangemerge::{merge_ranges, IpRange, RangeInterest};
 use std::fs::File;
 use std::io::{self, BufRead, Write as _};
 
-fn read_ranges<R: io::Read>(
-    reader: R,
-    ranges: &mut Vec<RangeInterest<IpRange>>,
-    interesting: bool,
-) -> Result<(), Error> {
-    let bufreader = io::BufReader::new(reader);
-    for line in bufreader.lines() {
-        let line = line?;
-        let range: IpRange = line.parse()?;
-        ranges.push(RangeInterest::new(range, interesting));
-    }
-    Ok(())
-}
-
 pub fn merge_command(options: MergeOptions) -> Result<(), Error> {
     let mut ranges = Vec::new();
     if let Some(file) = options.file {
-        read_ranges(File::open(&file)?, &mut ranges, true)?
+        read_single_line_ranges(&mut File::open(&file)?, &mut ranges, true)?
     } else {
-        read_ranges(io::stdin().lock(), &mut ranges, true)?
+        read_single_line_ranges(&mut io::stdin().lock(), &mut ranges, true)?
     };
 
-    for extra_file in options.extra_file.into_iter() {
-        read_ranges(File::open(&extra_file)?, &mut ranges, false)?
+    for extra_file in options.extra_ranges_files.into_iter() {
+        read_single_line_ranges(&mut File::open(&extra_file)?, &mut ranges, false)?
     }
 
     expand_ranges(
