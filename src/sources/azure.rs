@@ -2,7 +2,7 @@ use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::{bail, Error};
 use libnetrangemerge::IpRange;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io;
 use std::str::FromStr;
 
@@ -16,6 +16,7 @@ The Azure service has the following filterable values:
   * regionId (number) - The regionID, for example: 0 or 59
   * platform (string) - The platform, always: "Azure"
   * systemService (string) - The name of the system service, for example: "AzureBackup" or "AzureSQL"
+  * networkFeatures (table) - The network features, for example: "API" or "NSG"
 
 Its a bit unclear where the best documentation is for this format, but this
 API call seems to largely correspond to the JSON file:
@@ -86,6 +87,7 @@ pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<RangesWithMetadata>,
                 platform,
                 systemService,
                 addressPrefixes,
+                networkFeatures,
                 ..
             } = properties;
 
@@ -98,6 +100,14 @@ pub fn load_ranges(reader: &mut dyn io::Read) -> Result<Vec<RangesWithMetadata>,
             metadata.insert("regionId", regionId.into());
             metadata.insert("platform", platform.into());
             metadata.insert("systemService", systemService.into());
+
+            let mut network_features = BTreeMap::new();
+            if let Some(nfs) = networkFeatures {
+                for nf in nfs {
+                    network_features.insert(nf.into(), true.into());
+                }
+            }
+            metadata.insert("networkFeatures", network_features.into());
 
             let ranges = addressPrefixes
                 .into_iter()
