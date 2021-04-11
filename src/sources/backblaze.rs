@@ -4,9 +4,15 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::io;
 
-pub const FILTER_HELP: &'static str = r###"The Backblaze service has the following filterable values:
- * is_ipv4
- * is_ipv6"###;
+pub const FILTER_HELP: &'static str = r###"
+The Backblaze service has the following filterable values:
+  * is_ipv4 (boolean) - True for IPV4 ranges, False for IPV6 ranges
+  * is_ipv6 (boolean) - False for IPV4 ranges, True for IPV6 ranges
+
+Backblaze doesn't publish a machine readable list of IP ranges - instead
+we have to scrape them using a regex from:
+https://help.backblaze.com/hc/en-us/articles/217664588-Backblaze-IP-Address-List
+"###;
 
 pub fn fetch_ranges() -> Result<reqwest::blocking::Response, Error> {
     let response = reqwest::blocking::get(

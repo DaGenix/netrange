@@ -6,15 +6,21 @@ use std::collections::HashMap;
 use std::io;
 use std::str::FromStr;
 
-pub const FILTER_HELP: &'static str = r###"The Azure service has the following filterable values:
- * is_ipv4
- * is_ipv6
- * name
- * id
- * region
- * regionId
- * platform
- * systemService"###;
+pub const FILTER_HELP: &'static str = r###"
+The Azure service has the following filterable values:
+  * is_ipv4 (boolean) - True for IPV4 ranges, False for IPV6 ranges
+  * is_ipv6 (boolean) - False for IPV4 ranges, True for IPV6 ranges
+  * name (string) - The name of service tag, for example: "AppService" or "AzureArcInfrastructure"
+  * id (string) - The ID of service tag, for example: "AppService" or "AzureArcInfrastructure"
+  * region (string) - The region, for example: "eastus" or "westus2"
+  * regionId (number) - The regionID, for example: 0 or 59
+  * platform (string) - The platform, always: "Azure"
+  * systemService (string) - The name of the system service, for example: "AzureBackup" or "AzureSQL"
+
+Its a bit unclear where the best documentation is for this format, but this
+API call seems to largely correspond to the JSON file:
+https://docs.microsoft.com/en-us/rest/api/virtualnetwork/servicetags/list
+"###;
 
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]

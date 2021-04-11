@@ -6,12 +6,16 @@ use std::collections::HashMap;
 use std::io;
 use std::str::FromStr;
 
-pub const FILTER_HELP: &'static str = r###"The AWS service has the following filterable values:
- * is_ipv4
- * is_ipv6
- * region
- * service
- * network_border_group"###;
+pub const FILTER_HELP: &'static str = r###"
+The AWS service has the following filterable values:
+  * is_ipv4 (boolean) - True for IPV4 ranges, False for IPV6 ranges
+  * is_ipv6 (boolean) - False for IPV4 ranges, True for IPV6 ranges
+  * region (string) - The region, for example: "us-east-1", "us-gov-west-1", "GLOBAL", etc
+  * service (string) - The service, for example: "EC2", "AMAZON", "S3", "API_GATEWAY", etc
+  * network_border_group (string) - The network border group
+
+See https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html for more information
+"###;
 
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]

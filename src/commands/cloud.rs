@@ -88,6 +88,6 @@ pub fn cloud_get_read_command(options: CloudGetReadOptions) -> Result<(), Error>
 }
 
 pub fn cloud_filter_help_command(options: CloudFilterHelpOptions) -> Result<(), Error> {
-    println!("{}", get_cloud_config(&options.service)?.filter_help);
+    println!("{}", get_cloud_config(&options.service)?.filter_help.trim());
     Ok(())
 }

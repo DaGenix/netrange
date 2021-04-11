@@ -6,9 +6,13 @@ use std::collections::HashMap;
 use std::io;
 use std::str::FromStr;
 
-pub const FILTER_HELP: &'static str = r###"The Cloudflare service has the following filterable values:
- * is_ipv4
- * is_ipv6"###;
+pub const FILTER_HELP: &'static str = r###"
+The Cloudflare service has the following filterable values:
+  * is_ipv4 (boolean) - True for IPV4 ranges, False for IPV6 ranges
+  * is_ipv6 (boolean) - False for IPV4 ranges, True for IPV6 ranges
+
+Cloudflare IP ranges are published at: https://api.cloudflare.com/client/v4/ips
+"###;
 
 #[derive(Deserialize, Debug)]
 struct CloudflareRanges {
