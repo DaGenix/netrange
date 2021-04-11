@@ -168,7 +168,7 @@ netrange cloud filter-help aws
 
 The `merge` subcommand will read in a list of IP
 ranges from the given file (or STDIN if no file is
-provided), merge adjacent ranges, and then print
+"-"), merge adjacent ranges, and then print
 the resulting ranges to STDOUT.
 
 ```sh
