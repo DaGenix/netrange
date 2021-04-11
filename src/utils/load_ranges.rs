@@ -19,17 +19,14 @@ pub fn fetch_and_load_cloud_ranges(service: &str) -> Result<Vec<RangesWithMetada
 
 /// Load ranges from a file for the named service into a Vec<RangesWithMetadata>
 /// suitable for filtering and selecting.
-pub fn load_cloud_ranges(
-    service: &str,
-    file: Option<&PathBuf>,
-) -> Result<Vec<RangesWithMetadata>, Error> {
+pub fn load_cloud_ranges(service: &str, file: PathBuf) -> Result<Vec<RangesWithMetadata>, Error> {
     let stdin = io::stdin();
     let cc = get_cloud_config(service)?;
     let load_func = cc.load_ranges_func;
-    let ranges = if let Some(file) = file {
-        load_func(&mut File::open(&file)?)?
-    } else {
+    let ranges = if let Some("-") = file.as_path().to_str() {
         load_func(&mut stdin.lock())?
+    } else {
+        load_func(&mut File::open(&file)?)?
     };
     Ok(ranges)
 }

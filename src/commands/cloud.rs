@@ -16,7 +16,7 @@ pub fn cloud_get_command(options: CloudGetOptions) -> Result<(), Error> {
 }
 
 pub fn cloud_merge_command(options: CloudMergeOptions) -> Result<(), Error> {
-    let ranges = load_cloud_ranges(&options.service, options.file.as_ref())?;
+    let ranges = load_cloud_ranges(&options.service, options.file)?;
 
     cloud_process_ranges(
         ranges,
@@ -52,7 +52,7 @@ pub fn cloud_get_merge_command(options: CloudGetMergeOptions) -> Result<(), Erro
 }
 
 pub fn cloud_read_command(options: CloudReadOptions) -> Result<(), Error> {
-    let ranges = load_cloud_ranges(&options.service, options.file.as_ref())?;
+    let ranges = load_cloud_ranges(&options.service, options.file)?;
 
     cloud_process_ranges(
         ranges,
