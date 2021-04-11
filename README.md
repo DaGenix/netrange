@@ -6,6 +6,7 @@ by attributes provided by the cloud providers, and then
 optionally minimize the set of resulting ranges.
 
 [![Crates.io](https://img.shields.io/crates/v/netrange.svg)](https://crates.io/crates/netrange)
+[![Bors enabled](https://bors.tech/images/badge_small.svg)](https://app.bors.tech/repositories/32984)
 
 An example:
 
