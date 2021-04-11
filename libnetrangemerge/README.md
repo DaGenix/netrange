@@ -98,8 +98,7 @@ type to `merge_ranges_slice` for merging.
 
 ## Minimum Rust version policy
 
-libnetrangemerge was developed rustc 1.51 and likely works
-with earlier versions as well.
+libnetrangemerge supports rustc 1.45 and later.
 
 The minimum supported rustc version may be bumped with minor
 revisions.

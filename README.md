@@ -177,8 +177,7 @@ netrange merge input-ranges.txt
 
 ## Minimum Rust version policy
 
-netrange was developed rustc 1.51 and likely works
-with earlier versions as well.
+netrange supports rustc 1.45 and later.
 
 The minimum supported rustc version may be bumped with minor
 revisions.
