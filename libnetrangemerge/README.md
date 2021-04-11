@@ -8,6 +8,7 @@ and adjacent ranges have been merged.
 [![Crates.io](https://img.shields.io/crates/v/libnetrangemerge.svg)](https://crates.io/crates/libnetrangemerge)
 [![Documentation](https://docs.rs/libnetrangemerge/badge.svg)](https://docs.rs/libnetrangemerge)
 [![MIT/Apache-2 licensed](https://img.shields.io/crates/l/libnetrangemerge.svg)](./LICENSE-APACHE)
+[![Bors enabled](https://bors.tech/images/badge_small.svg)](https://app.bors.tech/repositories/32984)
 
 Given the list of CIDR ranges `0.0.0.0/0` and `127.0.0.0/8`, libnetrangemerge
 will produce the output CIDR range `0.0.0.0/0` since this range completely
