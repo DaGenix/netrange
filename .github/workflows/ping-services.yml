@@ -1,0 +1,66 @@
+on:
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: 0 0 * * *
+
+name: Ping all the cloud services
+
+jobs:
+  test:
+    name: Ping services
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: --path .
+      - run: |
+          COUNT=$(netrange cloud get-merge aws | wc -l)
+          echo "Got ${COUNT} ranges"
+          if [[ $COUNT -lt 1000 ]]; then
+            echo "Too few ranges"
+            exit 1
+          fi
+      - run: |
+          COUNT=$(netrange cloud get-merge azure | wc -l)
+          echo "Got ${COUNT} ranges"
+          if [[ $COUNT -lt 1000 ]]; then
+            echo "Too few ranges"
+            exit 1
+          fi
+      - run: |
+          COUNT=$(netrange cloud get-merge backblaze | wc -l)
+          echo "Got ${COUNT} ranges"
+          if [[ $COUNT -lt 2 ]]; then
+            echo "Too few ranges"
+            exit 1
+          fi
+      - run: |
+          COUNT=$(netrange cloud get-merge cloudflare | wc -l)
+          echo "Got ${COUNT} ranges"
+          if [[ $COUNT -lt 10 ]]; then
+            echo "Too few ranges"
+            exit 1
+          fi
+      - run: |
+          COUNT=$(netrange cloud get-merge gcp | wc -l)
+          echo "Got ${COUNT} ranges"
+          if [[ $COUNT -lt 100 ]]; then
+            echo "Too few ranges"
+            exit 1
+          fi
+      - run: |
+          COUNT=$(netrange cloud get-merge google | wc -l)
+          echo "Got ${COUNT} ranges"
+          if [[ $COUNT -lt 50 ]]; then
+            echo "Too few ranges"
+            exit 1
+          fi
