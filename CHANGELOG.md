@@ -1,3 +1,8 @@
+# 0.4.0
+
+* [#8](https://github.com/DaGenix/netrange/pull/8): Require a filename for the `merge` subcommand as well - this makes it
+  behave just like the `cloud merge` and `cloud read` subcommands.
+
 # 0.3.0
 
 * [#6](https://github.com/DaGenix/netrange/pull/6): Require a filename for the `cloud merge` and `cloud read` subcommands.
