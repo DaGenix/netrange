@@ -47,9 +47,9 @@ pub struct CloudMergeOptions {
     #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 
-    /// File to load the ip ranges from. STDIN is used if not
-    /// specified.
-    pub file: Option<PathBuf>,
+    /// File to load the ip ranges from. STDIN is used if
+    /// file is "-".
+    pub file: PathBuf,
 
     /// Lua filter program to filter the ranges of interest.
     #[structopt(long, conflicts_with = "filter-file")]
@@ -178,9 +178,9 @@ pub struct CloudReadOptions {
     #[structopt(possible_values = get_cloud_names())]
     pub service: String,
 
-    /// File to load the ip ranges from. STDIN is used if not
-    /// specified.
-    pub file: Option<PathBuf>,
+    /// File to load the ip ranges from. STDIN is used if
+    /// file is "-".
+    pub file: PathBuf,
 
     /// Lua filter program to select the ranges of interest.
     #[structopt(long, conflicts_with = "filter-file")]
