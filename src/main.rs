@@ -235,8 +235,9 @@ pub struct CloudFilterHelpOptions {
 /// The minimized set of ranges will be printed to STDOUT.
 #[derive(Debug, StructOpt)]
 pub struct MergeOptions {
-    /// The file to read ranges from
-    pub file: Option<PathBuf>,
+    /// The file to read ranges from. STDIN is used if
+    /// file is "-".
+    pub file: PathBuf,
 
     /// Extra ranges that may be helpful to minimize the set
     ///

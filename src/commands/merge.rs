@@ -8,10 +8,10 @@ use std::io::{self, Write as _};
 
 pub fn merge_command(options: MergeOptions) -> Result<(), Error> {
     let mut ranges = Vec::new();
-    if let Some(file) = options.file {
-        read_single_line_ranges(&mut File::open(&file)?, &mut ranges, true)?
-    } else {
+    if let Some("-") = options.file.as_path().to_str() {
         read_single_line_ranges(&mut io::stdin().lock(), &mut ranges, true)?
+    } else {
+        read_single_line_ranges(&mut File::open(&options.file)?, &mut ranges, true)?
     };
 
     for extra_file in options.extra_ranges_files.into_iter() {
