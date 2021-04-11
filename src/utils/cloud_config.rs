@@ -1,4 +1,4 @@
-use crate::sources::{aws, azure, backblaze, cloudflare, gcp};
+use crate::sources::{aws, azure, backblaze, cloudflare, gcp, google};
 use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::{bail, Error};
 use once_cell::sync::Lazy;
@@ -42,6 +42,12 @@ const CONFIG: &[CloudConfig] = &[
         fetch_ranges_func: gcp::fetch_ranges,
         load_ranges_func: gcp::load_ranges,
         filter_help: gcp::FILTER_HELP,
+    },
+    CloudConfig {
+        service_name: "google",
+        fetch_ranges_func: google::fetch_ranges,
+        load_ranges_func: google::load_ranges,
+        filter_help: google::FILTER_HELP,
     },
 ];
 
