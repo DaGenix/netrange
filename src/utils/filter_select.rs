@@ -1,10 +1,19 @@
 use anyhow::{bail, Error};
 use libnetrangemerge::{IpRange, Range as _, RangeInterest};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
+#[derive(Ord, PartialOrd, Eq, PartialEq)]
 pub enum MetadataValue {
+    Boolean(bool),
     String(String),
     I64(i64),
+    Table(BTreeMap<MetadataValue, MetadataValue>),
+}
+
+impl From<bool> for MetadataValue {
+    fn from(val: bool) -> MetadataValue {
+        MetadataValue::Boolean(val)
+    }
 }
 
 impl From<String> for MetadataValue {
@@ -16,6 +25,12 @@ impl From<String> for MetadataValue {
 impl From<i64> for MetadataValue {
     fn from(val: i64) -> MetadataValue {
         MetadataValue::I64(val)
+    }
+}
+
+impl From<BTreeMap<MetadataValue, MetadataValue>> for MetadataValue {
+    fn from(val: BTreeMap<MetadataValue, MetadataValue>) -> MetadataValue {
+        MetadataValue::Table(val)
     }
 }
 
@@ -31,6 +46,24 @@ impl RangesWithMetadata {
     ) -> RangesWithMetadata {
         RangesWithMetadata { metadata, ranges }
     }
+}
+
+fn build_lua_value(ctx: rlua::Context<'_>, value: MetadataValue) -> Result<rlua::Value<'_>, Error> {
+    let out = match value {
+        MetadataValue::Boolean(val) => rlua::Value::Boolean(val),
+        MetadataValue::String(val) => rlua::Value::String(ctx.create_string(&val)?),
+        MetadataValue::I64(val) => rlua::Value::Integer(val),
+        MetadataValue::Table(val) => {
+            let table = ctx.create_table()?;
+            for (key, value) in val.into_iter() {
+                let k = build_lua_value(ctx, key)?;
+                let v = build_lua_value(ctx, value)?;
+                table.set(k, v)?;
+            }
+            rlua::Value::Table(table)
+        }
+    };
+    Ok(out)
 }
 
 pub fn filter_select(
@@ -64,10 +97,7 @@ pub fn filter_select(
         let metadata = ranges_with_metadata.metadata;
         lua.context(|ctx| -> Result<(), Error> {
             for (k, v) in metadata {
-                match v {
-                    MetadataValue::String(val) => ctx.globals().set(k, val)?,
-                    MetadataValue::I64(val) => ctx.globals().set(k, val)?,
-                }
+                ctx.globals().set(k, build_lua_value(ctx, v)?)?;
             }
             Ok(())
         })?;

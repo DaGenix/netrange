@@ -6,11 +6,15 @@ use std::collections::HashMap;
 use std::io;
 use std::str::FromStr;
 
-pub const FILTER_HELP: &'static str = r###"The GCP service has the following filterable values:
- * is_ipv4
- * is_ipv6
- * service
- * scope"###;
+pub const FILTER_HELP: &'static str = r###"
+The GCP service has the following filterable values:
+  * is_ipv4 (boolean) - True for IPV4 ranges, False for IPV6 ranges
+  * is_ipv6 (boolean) - False for IPV4 ranges, True for IPV6 ranges
+  * service (string) - The service, always "Google Cloud"
+  * scope (string) - The scope, for example: "us-east1" or "europe-central2"
+
+Documentation is available from: https://support.google.com/a/answer/10026322?hl=en
+"###;
 
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
