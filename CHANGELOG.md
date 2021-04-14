@@ -1,3 +1,7 @@
+# Unreleased
+
+* [#11](https://github.com/DaGenix/netrange/pull/11): Implement support for DigitalOcean service
+
 # 0.4.0
 
 * [#8](https://github.com/DaGenix/netrange/pull/8): Require a filename for the `merge` subcommand as well - this makes it
