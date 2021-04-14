@@ -1,0 +1,83 @@
+name: Build and upload release artifacts
+
+on:
+  push:
+    tags:
+      - netrange-*
+
+jobs:
+  publish-unix:
+    name: Build and upload for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-16.04
+            artifact_name: netrange
+            asset_suffix: -linux-amd64.tar.gz
+          - os: macos-10.15
+            artifact_name: netrange
+            asset_suffix: -macos-amd64.tar.gz
+
+    steps:
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        shell: bash
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Build
+        run: cargo build --release --locked
+      - name: Compress Files
+        run: tar czf ${{ steps.get_version.outputs.VERSION }}${{ matrix.asset_suffix }} -C target/release ${{ matrix.artifact_name }}
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@4e5de2077753aa547cb9ca80caa0f77bf18f6bfb
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ steps.get_version.outputs.VERSION }}${{ matrix.asset_suffix }}
+          tag: ${{ github.ref }}
+          prerelease: true
+
+  publish-windows:
+    name: Build and upload for ${{ matrix.os }} - ${{ matrix.toolchain }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-2016
+            artifact_name: netrange.exe
+            asset_suffix: -windows-amd64.zip
+            toolchain: stable-x86_64-pc-windows-msvc
+          - os: windows-2016
+            artifact_name: netrange.exe
+            asset_suffix: -windows-i686.zip
+            toolchain: stable-i686-pc-windows-msvc
+
+    steps:
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        shell: bash
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+      - name: Build
+        run: cargo build --release --locked
+        env:
+          RUSTFLAGS: "-C target-feature=+crt-static"
+      - name: Compress Files
+        run: 7z a -tzip ${{ steps.get_version.outputs.VERSION }}${{ matrix.asset_suffix }} .\target\release\${{ matrix.artifact_name }}
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@4e5de2077753aa547cb9ca80caa0f77bf18f6bfb
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ steps.get_version.outputs.VERSION }}${{ matrix.asset_suffix }}
+          tag: ${{ github.ref }}
+          prerelease: true
