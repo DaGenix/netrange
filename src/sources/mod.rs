@@ -4,4 +4,5 @@ pub mod backblaze;
 pub mod cloudflare;
 pub mod digitalocean;
 pub mod gcp;
+pub mod github;
 pub mod google;
