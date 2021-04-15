@@ -65,6 +65,13 @@ jobs:
             exit 1
           fi
       - run: |
+          COUNT=$(netrange cloud get-merge github | wc -l)
+          echo "Got ${COUNT} ranges"
+          if [[ $COUNT -lt 50 ]]; then
+            echo "Too few ranges"
+            exit 1
+          fi
+      - run: |
           COUNT=$(netrange cloud get-merge google | wc -l)
           echo "Got ${COUNT} ranges"
           if [[ $COUNT -lt 50 ]]; then
