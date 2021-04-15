@@ -1,4 +1,4 @@
-# Unreleased
+# 0.5.0 - 2021-04-15
 
 * [#13](https://github.com/DaGenix/netrange/pull/13): Implement support for GitHub service
 * [#11](https://github.com/DaGenix/netrange/pull/11): Implement support for DigitalOcean service
