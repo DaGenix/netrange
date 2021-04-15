@@ -21,11 +21,17 @@ any adjacent IP ranges.
 
 ## Installation
 
-[Download and install Rust](https://www.rust-lang.org/learn/get-started). Then, run:
+Precompiled binaries are available from the [Release Pages](https://github.com/DaGenix/netrange/releases)
+for Linux, Mac OS, and Windows (32 & 64 bit).
 
-```sh
-cargo install netrange
-```
+Or, you can compile from source:
+
+1. [Download and install Rust](https://www.rust-lang.org/learn/get-started).
+
+2.  Then run:
+    ```sh
+    cargo install netrange
+    ```
 
 ## Merging and Reading
 
