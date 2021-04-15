@@ -8,6 +8,16 @@ optionally minimize the set of resulting ranges.
 [![Crates.io](https://img.shields.io/crates/v/netrange.svg)](https://crates.io/crates/netrange)
 [![Bors enabled](https://bors.tech/images/badge_small.svg)](https://app.bors.tech/repositories/32984)
 
+The following cloud services are supported:
+  - AWS
+  - Azure
+  - Backblaze
+  - Cloudflare
+  - DigitalOcean
+  - GCP
+  - Github
+  - Google (all Google services, including GCP)
+
 An example:
 
 ```sh
