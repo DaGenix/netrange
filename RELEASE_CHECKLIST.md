@@ -3,11 +3,11 @@
 - [ ] Bump the version in [Cargo.toml](./Cargo.toml).
 - [ ] Update [CHANGELOG.md](./CHANGELOG.md) with the new version and date.
 - [ ] Create a commit and open a new PR.
-- [ ] Once tests complete, create a draft-release against the PR branch
+- [ ] Once tests complete, create a pre-release against the PR branch
   with a new tag of the form "netrange-1.2.3" where "1.2.3" is the version
   of netrange. Make sure the release notes contains the text from CHANGELOG.md.
 - [ ] Wait for Pre-compiled binaries to be uploaded to the release.
-- [ ] Mark the release as not a draft.
+- [ ] Update the release to no longer mark it as a pre-release.
 - [ ] Use `cargo publish` to upload the package to crates.io
 - [ ] Merge the PR with the comment "bors r+".
 
