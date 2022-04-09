@@ -37,13 +37,6 @@ jobs:
             exit 1
           fi
       - run: |
-          COUNT=$(netrange cloud get-merge backblaze | wc -l)
-          echo "Got ${COUNT} ranges"
-          if [[ $COUNT -lt 2 ]]; then
-            echo "Too few ranges"
-            exit 1
-          fi
-      - run: |
           COUNT=$(netrange cloud get-merge cloudflare | wc -l)
           echo "Got ${COUNT} ranges"
           if [[ $COUNT -lt 10 ]]; then
@@ -54,6 +47,13 @@ jobs:
           COUNT=$(netrange cloud get-merge digitalocean | wc -l)
           echo "Got ${COUNT} ranges"
           if [[ $COUNT -lt 100 ]]; then
+            echo "Too few ranges"
+            exit 1
+          fi
+      - run: |
+          COUNT=$(netrange cloud get-merge fastly | wc -l)
+          echo "Got ${COUNT} ranges"
+          if [[ $COUNT -lt 2 ]]; then
             echo "Too few ranges"
             exit 1
           fi
