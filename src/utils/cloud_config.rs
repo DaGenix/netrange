@@ -1,4 +1,4 @@
-use crate::sources::{aws, azure, backblaze, cloudflare, digitalocean, gcp, github, google};
+use crate::sources::{aws, azure, cloudflare, digitalocean, gcp, github, google};
 use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::{bail, Error};
 use once_cell::sync::Lazy;
@@ -24,12 +24,6 @@ const CONFIG: &[CloudConfig] = &[
         fetch_ranges_func: azure::fetch_ranges,
         load_ranges_func: azure::load_ranges,
         filter_help: azure::FILTER_HELP,
-    },
-    CloudConfig {
-        service_name: "backblaze",
-        fetch_ranges_func: backblaze::fetch_ranges,
-        load_ranges_func: backblaze::load_ranges,
-        filter_help: backblaze::FILTER_HELP,
     },
     CloudConfig {
         service_name: "cloudflare",
