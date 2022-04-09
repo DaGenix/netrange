@@ -13,6 +13,7 @@ The following cloud services are supported:
   - Azure
   - Cloudflare
   - DigitalOcean
+  - Fastly
   - GCP
   - Github
   - Google (all Google services, including GCP)
