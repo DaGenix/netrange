@@ -1,4 +1,4 @@
-use crate::sources::{aws, azure, cloudflare, digitalocean, gcp, github, google};
+use crate::sources::{aws, azure, cloudflare, digitalocean, fastly, gcp, github, google};
 use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::{bail, Error};
 use once_cell::sync::Lazy;
@@ -36,6 +36,12 @@ const CONFIG: &[CloudConfig] = &[
         fetch_ranges_func: digitalocean::fetch_ranges,
         load_ranges_func: digitalocean::load_ranges,
         filter_help: digitalocean::FILTER_HELP,
+    },
+    CloudConfig {
+        service_name: "fastly",
+        fetch_ranges_func: fastly::fetch_ranges,
+        load_ranges_func: fastly::load_ranges,
+        filter_help: fastly::FILTER_HELP,
     },
     CloudConfig {
         service_name: "gcp",
