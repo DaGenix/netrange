@@ -15,6 +15,7 @@ Cloudflare IP ranges are published at: https://api.cloudflare.com/client/v4/ips
 "###;
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct CloudflareRanges {
     result: CloudflareRangesResult,
     success: bool,

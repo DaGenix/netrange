@@ -24,7 +24,7 @@ https://docs.microsoft.com/en-us/rest/api/virtualnetwork/servicetags/list
 "###;
 
 #[derive(Deserialize, Debug)]
-#[allow(non_snake_case)]
+#[allow(non_snake_case, dead_code)]
 struct AzureRanges {
     changeNumber: i64,
     cloud: String,
@@ -39,7 +39,7 @@ struct AzureRange {
 }
 
 #[derive(Deserialize, Debug)]
-#[allow(non_snake_case)]
+#[allow(non_snake_case, dead_code)]
 struct AzureRangeProperties {
     changeNumber: i64,
     region: String,
