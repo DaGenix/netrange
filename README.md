@@ -11,7 +11,6 @@ optionally minimize the set of resulting ranges.
 The following cloud services are supported:
   - AWS
   - Azure
-  - Backblaze
   - Cloudflare
   - DigitalOcean
   - GCP
