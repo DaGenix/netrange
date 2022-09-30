@@ -29,5 +29,4 @@ clap = { version = "4", features = ["derive"] }
 reqwest = { version = "0.11.12", features = ["blocking"] }
 regex = "1.4.3"
 cidr = "0.1.1"
-once_cell = "1.7.2"
 csv = "1.1.6"
