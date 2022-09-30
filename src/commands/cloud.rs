@@ -9,14 +9,14 @@ use anyhow::Error;
 use std::io;
 
 pub fn cloud_get_command(options: CloudGetOptions) -> Result<(), Error> {
-    let func = get_cloud_config(&options.service)?.fetch_ranges_func;
+    let func = get_cloud_config(options.service)?.fetch_ranges_func;
     let mut response = func()?;
     io::copy(&mut response, &mut io::stdout().lock())?;
     Ok(())
 }
 
 pub fn cloud_merge_command(options: CloudMergeOptions) -> Result<(), Error> {
-    let ranges = load_cloud_ranges(&options.service, options.file)?;
+    let ranges = load_cloud_ranges(options.service, options.file)?;
 
     cloud_process_ranges(
         ranges,
@@ -34,7 +34,7 @@ pub fn cloud_merge_command(options: CloudMergeOptions) -> Result<(), Error> {
 }
 
 pub fn cloud_get_merge_command(options: CloudGetMergeOptions) -> Result<(), Error> {
-    let ranges = fetch_and_load_cloud_ranges(&options.service)?;
+    let ranges = fetch_and_load_cloud_ranges(options.service)?;
 
     cloud_process_ranges(
         ranges,
@@ -52,7 +52,7 @@ pub fn cloud_get_merge_command(options: CloudGetMergeOptions) -> Result<(), Erro
 }
 
 pub fn cloud_read_command(options: CloudReadOptions) -> Result<(), Error> {
-    let ranges = load_cloud_ranges(&options.service, options.file)?;
+    let ranges = load_cloud_ranges(options.service, options.file)?;
 
     cloud_process_ranges(
         ranges,
@@ -70,7 +70,7 @@ pub fn cloud_read_command(options: CloudReadOptions) -> Result<(), Error> {
 }
 
 pub fn cloud_get_read_command(options: CloudGetReadOptions) -> Result<(), Error> {
-    let ranges = fetch_and_load_cloud_ranges(&options.service)?;
+    let ranges = fetch_and_load_cloud_ranges(options.service)?;
 
     cloud_process_ranges(
         ranges,
@@ -88,6 +88,6 @@ pub fn cloud_get_read_command(options: CloudGetReadOptions) -> Result<(), Error>
 }
 
 pub fn cloud_filter_help_command(options: CloudFilterHelpOptions) -> Result<(), Error> {
-    println!("{}", get_cloud_config(&options.service)?.filter_help.trim());
+    println!("{}", get_cloud_config(options.service)?.filter_help.trim());
     Ok(())
 }

@@ -7,20 +7,20 @@ use crate::commands::cloud::{
     cloud_merge_command, cloud_read_command,
 };
 use crate::commands::merge::merge_command;
-use crate::utils::cloud_config::get_cloud_names;
+use crate::utils::cloud_config::CloudName;
 use anyhow::Error;
 use std::path::PathBuf;
-use structopt::StructOpt;
+use clap::{Parser, Args, Subcommand};
 
 /// Download the source file that contains the IP ranges that the service uses.
 ///
 /// Many, but not all, cloud services use a JSON formatted file to provide
 /// the IP ranges that they use.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Args)]
 pub struct CloudGetOptions {
     /// Cloud service
-    #[structopt(possible_values = get_cloud_names())]
-    pub service: String,
+    #[arg(value_enum)]
+    pub service: CloudName,
 }
 
 /// Load IP ranges for the service, merge adjacent ranges, and output to STDOUT.
@@ -41,30 +41,30 @@ pub struct CloudGetOptions {
 /// downloaded such as with the "cloud get <service>" command. You may
 /// download and merge in just a single command by using the
 /// "cloud get-merge <service>" command instead.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Args)]
 pub struct CloudMergeOptions {
     /// Cloud service
-    #[structopt(possible_values = get_cloud_names())]
-    pub service: String,
+    #[arg(value_enum)]
+    pub service: CloudName,
 
     /// File to load the ip ranges from. STDIN is used if
     /// file is "-".
     pub file: PathBuf,
 
     /// Lua filter program to filter the ranges of interest.
-    #[structopt(long, conflicts_with = "filter-file")]
+    #[arg(long, conflicts_with = "filter_file")]
     pub filter: Option<String>,
 
     /// Path of a file containing a Lua program to filter the ranges of interest.
-    #[structopt(long)]
+    #[arg(long)]
     pub filter_file: Option<PathBuf>,
 
     /// Lua filter program to select the ranges of interest.
-    #[structopt(long, conflicts_with = "select-file")]
+    #[arg(long, conflicts_with = "select_file")]
     pub select: Option<String>,
 
     /// Path of a file containing a Lua program to select the ranges of interest.
-    #[structopt(long)]
+    #[arg(long)]
     pub select_file: Option<PathBuf>,
 
     /// Extra ranges that may be helpful to minimize the set
@@ -73,7 +73,7 @@ pub struct CloudMergeOptions {
     /// The file should contain a single CIDR range per line.
     /// These ranges will be used to minimize the main set in the same way
     /// that non-selected ranges are.
-    #[structopt(name = "extra-ranges-file", long)]
+    #[arg(name = "extra-ranges-file", long)]
     pub extra_ranges_files: Vec<PathBuf>,
 
     /// A minimum ipv4 network size.
@@ -81,7 +81,7 @@ pub struct CloudMergeOptions {
     /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
-    #[structopt(long)]
+    #[arg(long)]
     pub min_ipv4_network_size: Option<u8>,
 
     /// A minimum ipv6 network size.
@@ -89,7 +89,7 @@ pub struct CloudMergeOptions {
     /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
-    #[structopt(long)]
+    #[arg(long)]
     pub min_ipv6_network_size: Option<u8>,
 }
 
@@ -112,26 +112,26 @@ pub struct CloudMergeOptions {
 /// times. In such a case, you may want to consider using "cloud get <service>"
 /// to download the file once and then use "cloud merge <service>" to process
 /// the already downloaded file.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Args)]
 pub struct CloudGetMergeOptions {
     /// Cloud service
-    #[structopt(possible_values = get_cloud_names())]
-    pub service: String,
+    #[arg(value_enum)]
+    pub service: CloudName,
 
     /// Lua filter program to filter the ranges of interest.
-    #[structopt(long, conflicts_with = "filter-file")]
+    #[arg(long, conflicts_with = "filter_file")]
     pub filter: Option<String>,
 
     /// Path of a file containing a Lua program to filter the ranges of interest.
-    #[structopt(long)]
+    #[arg(long)]
     pub filter_file: Option<PathBuf>,
 
     /// Lua filter program to select the ranges of interest.
-    #[structopt(long, conflicts_with = "select-file")]
+    #[arg(long, conflicts_with = "select_file")]
     pub select: Option<String>,
 
     /// Path of a file containing a Lua program to select the ranges of interest.
-    #[structopt(long)]
+    #[arg(long)]
     pub select_file: Option<PathBuf>,
 
     /// Extra ranges that may be helpful to minimize the set
@@ -140,7 +140,7 @@ pub struct CloudGetMergeOptions {
     /// The file should contain a single CIDR range per line.
     /// These ranges will be used to minimize the main set in the same way
     /// that non-selected ranges are.
-    #[structopt(name = "extra-ranges-file", long)]
+    #[arg(name = "extra-ranges-file", long)]
     pub extra_ranges_files: Vec<PathBuf>,
 
     /// A minimum ipv4 network size.
@@ -148,7 +148,7 @@ pub struct CloudGetMergeOptions {
     /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
-    #[structopt(long)]
+    #[arg(long)]
     pub min_ipv4_network_size: Option<u8>,
 
     /// A minimum ipv6 network size.
@@ -156,7 +156,7 @@ pub struct CloudGetMergeOptions {
     /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
-    #[structopt(long)]
+    #[arg(long)]
     pub min_ipv6_network_size: Option<u8>,
 }
 
@@ -172,22 +172,22 @@ pub struct CloudGetMergeOptions {
 /// downloaded such as with the "cloud get <service>" command. You may
 /// download and merge in just a single command by using the
 /// "cloud get-read <service>" command instead.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Args)]
 pub struct CloudReadOptions {
     /// Cloud service
-    #[structopt(possible_values = get_cloud_names())]
-    pub service: String,
+    #[arg(value_enum)]
+    pub service: CloudName,
 
     /// File to load the ip ranges from. STDIN is used if
     /// file is "-".
     pub file: PathBuf,
 
     /// Lua filter program to select the ranges of interest.
-    #[structopt(long, conflicts_with = "filter-file")]
+    #[arg(long, conflicts_with = "filter_file")]
     pub filter: Option<String>,
 
     /// Path of a file containing a Lua filter program to select the ranges of interest.
-    #[structopt(long)]
+    #[arg(long)]
     pub filter_file: Option<PathBuf>,
 }
 
@@ -204,27 +204,27 @@ pub struct CloudReadOptions {
 /// times. In such a case, you may want to consider using "cloud get <service>"
 /// to download the file once and then use "cloud merge <service>" to process
 /// the already downloaded file.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Args)]
 pub struct CloudGetReadOptions {
     /// Cloud service
-    #[structopt(possible_values = get_cloud_names())]
-    pub service: String,
+    #[arg(value_enum)]
+    pub service: CloudName,
 
     /// Lua filter program to select the ranges of interest.
-    #[structopt(long, conflicts_with = "filter-file")]
+    #[arg(long, conflicts_with = "filter_file")]
     pub filter: Option<String>,
 
     /// Path of a file containing a Lua filter program to select the ranges of interest.
-    #[structopt(long)]
+    #[arg(long)]
     pub filter_file: Option<PathBuf>,
 }
 
 /// Print information about parameters available to filter ranges
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Args)]
 pub struct CloudFilterHelpOptions {
     /// Cloud service
-    #[structopt(possible_values = get_cloud_names())]
-    pub service: String,
+    #[arg(value_enum)]
+    pub service: CloudName,
 }
 
 /// Merge IP ranges to try to minimize the number of ranges
@@ -233,7 +233,7 @@ pub struct CloudFilterHelpOptions {
 /// via STDIN with a single range per line.
 ///
 /// The minimized set of ranges will be printed to STDOUT.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Args)]
 pub struct MergeOptions {
     /// The file to read ranges from. STDIN is used if
     /// file is "-".
@@ -245,7 +245,7 @@ pub struct MergeOptions {
     /// The file should contain a single CIDR range per line.
     /// These ranges will be used to minimize the main set in the same way
     /// that non-selected ranges are with the "cloud merge" subcommand.
-    #[structopt(name = "extra-ranges-file", long)]
+    #[arg(name = "extra-ranges-file", long)]
     pub extra_ranges_files: Vec<PathBuf>,
 
     /// A minimum ipv4 network size.
@@ -253,7 +253,7 @@ pub struct MergeOptions {
     /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
-    #[structopt(long)]
+    #[arg(long)]
     pub min_ipv4_network_size: Option<u8>,
 
     /// A minimum ipv6 network size.
@@ -261,77 +261,64 @@ pub struct MergeOptions {
     /// Any ranges smaller that this size are automatically
     /// increased to this size. This option may help minimize the size of the output
     /// network ranges.
-    #[structopt(long)]
+    #[arg(long)]
     pub min_ipv6_network_size: Option<u8>,
 }
 
 /// Commands for working with cloud service's IP ranges
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Subcommand)]
 enum CloudCommands {
-    Get {
-        #[structopt(flatten)]
-        options: CloudGetOptions,
-    },
-    Merge {
-        #[structopt(flatten)]
-        options: CloudMergeOptions,
-    },
-    GetMerge {
-        #[structopt(flatten)]
-        options: CloudGetMergeOptions,
-    },
-    Read {
-        #[structopt(flatten)]
-        options: CloudReadOptions,
-    },
-    GetRead {
-        #[structopt(flatten)]
-        options: CloudGetReadOptions,
-    },
-    FilterHelp {
-        #[structopt(flatten)]
-        options: CloudFilterHelpOptions,
-    },
+    Get (CloudGetOptions),
+    Merge (CloudMergeOptions),
+    GetMerge (CloudGetMergeOptions),
+    Read (CloudReadOptions),
+    GetRead (CloudGetReadOptions),
+    FilterHelp (CloudFilterHelpOptions),
 }
 
 /// netrangemerge provides a command line interface to retrieve,
 /// filter, and merge adjacent IP ranges for various cloud
 /// services.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Subcommand)]
 enum Commands {
     Cloud {
-        #[structopt(flatten)]
+        #[command(subcommand)]
         subcommand: CloudCommands,
     },
-    Merge {
-        #[structopt(flatten)]
-        options: MergeOptions,
-    },
+    Merge (MergeOptions),
+}
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+#[command(propagate_version = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
 }
 
 fn main() -> Result<(), Error> {
-    let opts = Commands::from_args();
-    match opts {
+    let opts = Cli::parse();
+    match opts.command {
         Commands::Cloud {
-            subcommand: CloudCommands::Get { options },
+            subcommand: CloudCommands::Get ( options ),
         } => cloud_get_command(options)?,
         Commands::Cloud {
-            subcommand: CloudCommands::Merge { options },
+            subcommand: CloudCommands::Merge ( options ),
         } => cloud_merge_command(options)?,
         Commands::Cloud {
-            subcommand: CloudCommands::GetMerge { options },
+            subcommand: CloudCommands::GetMerge ( options ),
         } => cloud_get_merge_command(options)?,
         Commands::Cloud {
-            subcommand: CloudCommands::Read { options },
+            subcommand: CloudCommands::Read ( options ),
         } => cloud_read_command(options)?,
         Commands::Cloud {
-            subcommand: CloudCommands::GetRead { options },
+            subcommand: CloudCommands::GetRead ( options ),
         } => cloud_get_read_command(options)?,
         Commands::Cloud {
-            subcommand: CloudCommands::FilterHelp { options },
+            subcommand: CloudCommands::FilterHelp ( options ),
         } => cloud_filter_help_command(options)?,
 
-        Commands::Merge { options } => merge_command(options)?,
+        Commands::Merge ( options ) => merge_command(options)?,
     }
     Ok(())
 }

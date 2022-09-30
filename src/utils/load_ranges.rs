@@ -1,4 +1,4 @@
-use crate::utils::cloud_config::get_cloud_config;
+use crate::utils::cloud_config::{CloudName, get_cloud_config};
 use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::Error;
 use libnetrangemerge::{IpRange, RangeInterest};
@@ -9,7 +9,7 @@ use std::path::PathBuf;
 /// Download ranges from the internet for the named
 /// service and then load them into a Vec<RangesWithMetadata>
 /// suitable for filtering and selecting.
-pub fn fetch_and_load_cloud_ranges(service: &str) -> Result<Vec<RangesWithMetadata>, Error> {
+pub fn fetch_and_load_cloud_ranges(service: CloudName) -> Result<Vec<RangesWithMetadata>, Error> {
     let cc = get_cloud_config(service)?;
     let fetch_func = cc.fetch_ranges_func;
     let load_func = cc.load_ranges_func;
@@ -19,7 +19,7 @@ pub fn fetch_and_load_cloud_ranges(service: &str) -> Result<Vec<RangesWithMetada
 
 /// Load ranges from a file for the named service into a Vec<RangesWithMetadata>
 /// suitable for filtering and selecting.
-pub fn load_cloud_ranges(service: &str, file: PathBuf) -> Result<Vec<RangesWithMetadata>, Error> {
+pub fn load_cloud_ranges(service: CloudName, file: PathBuf) -> Result<Vec<RangesWithMetadata>, Error> {
     let stdin = io::stdin();
     let cc = get_cloud_config(service)?;
     let load_func = cc.load_ranges_func;
