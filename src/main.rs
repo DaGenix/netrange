@@ -9,8 +9,8 @@ use crate::commands::cloud::{
 use crate::commands::merge::merge_command;
 use crate::utils::cloud_config::CloudName;
 use anyhow::Error;
+use clap::{Args, Parser, Subcommand};
 use std::path::PathBuf;
-use clap::{Parser, Args, Subcommand};
 
 /// Download the source file that contains the IP ranges that the service uses.
 ///
@@ -268,12 +268,12 @@ pub struct MergeOptions {
 /// Commands for working with cloud service's IP ranges
 #[derive(Debug, Subcommand)]
 enum CloudCommands {
-    Get (CloudGetOptions),
-    Merge (CloudMergeOptions),
-    GetMerge (CloudGetMergeOptions),
-    Read (CloudReadOptions),
-    GetRead (CloudGetReadOptions),
-    FilterHelp (CloudFilterHelpOptions),
+    Get(CloudGetOptions),
+    Merge(CloudMergeOptions),
+    GetMerge(CloudGetMergeOptions),
+    Read(CloudReadOptions),
+    GetRead(CloudGetReadOptions),
+    FilterHelp(CloudFilterHelpOptions),
 }
 
 /// netrangemerge provides a command line interface to retrieve,
@@ -285,7 +285,7 @@ enum Commands {
         #[command(subcommand)]
         subcommand: CloudCommands,
     },
-    Merge (MergeOptions),
+    Merge(MergeOptions),
 }
 
 #[derive(Parser)]
@@ -300,25 +300,25 @@ fn main() -> Result<(), Error> {
     let opts = Cli::parse();
     match opts.command {
         Commands::Cloud {
-            subcommand: CloudCommands::Get ( options ),
+            subcommand: CloudCommands::Get(options),
         } => cloud_get_command(options)?,
         Commands::Cloud {
-            subcommand: CloudCommands::Merge ( options ),
+            subcommand: CloudCommands::Merge(options),
         } => cloud_merge_command(options)?,
         Commands::Cloud {
-            subcommand: CloudCommands::GetMerge ( options ),
+            subcommand: CloudCommands::GetMerge(options),
         } => cloud_get_merge_command(options)?,
         Commands::Cloud {
-            subcommand: CloudCommands::Read ( options ),
+            subcommand: CloudCommands::Read(options),
         } => cloud_read_command(options)?,
         Commands::Cloud {
-            subcommand: CloudCommands::GetRead ( options ),
+            subcommand: CloudCommands::GetRead(options),
         } => cloud_get_read_command(options)?,
         Commands::Cloud {
-            subcommand: CloudCommands::FilterHelp ( options ),
+            subcommand: CloudCommands::FilterHelp(options),
         } => cloud_filter_help_command(options)?,
 
-        Commands::Merge ( options ) => merge_command(options)?,
+        Commands::Merge(options) => merge_command(options)?,
     }
     Ok(())
 }

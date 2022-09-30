@@ -1,8 +1,8 @@
 use crate::sources::{aws, azure, cloudflare, digitalocean, fastly, gcp, github, google};
 use crate::utils::filter_select::RangesWithMetadata;
 use anyhow::{bail, Error};
-use std::io::Read;
 use clap::ValueEnum;
+use std::io::Read;
 
 #[derive(ValueEnum, Clone, Copy, Eq, PartialEq, Debug)]
 pub enum CloudName {
